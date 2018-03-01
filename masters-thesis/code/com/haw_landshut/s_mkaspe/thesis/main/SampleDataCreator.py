@@ -14,7 +14,7 @@ def createRandomFile(seed, num_elements, min_roll, max_roll):
     NOTE: file will be placed in the distributions folder
     """
     random.seed(seed)
-    file_name = '../distributions/random_' + str(seed) + '_' + str(num_elements) + '_' + str(min_roll) + '_' + str(max_roll)
+    file_name = '../../../../../distributions/random_' + str(seed) + '_' + str(num_elements) + '_' + str(min_roll) + '_' + str(max_roll)
     with open(file_name, 'w') as file:
         for _ in range(num_elements):
             file.write(str(random.randint(min_roll, max_roll)) + '\n')
@@ -26,7 +26,7 @@ def createdOrderedFile(num_elements, min_num):
     creates a file of numbers in ascending order
     NOTE: file will be placed in the distributions folder
     """
-    file_name = '../distributions/ordered_'  + str(num_elements) + '_' + str(min_num) + '_' + str(min_num + num_elements)
+    file_name = '../../../../../distributions/ordered_'  + str(num_elements) + '_' + str(min_num) + '_' + str(min_num + num_elements)
     with open(file_name, 'w') as file:
         for num in range(min_num, min_num + num_elements):
             file.write(str(num) + '\n')

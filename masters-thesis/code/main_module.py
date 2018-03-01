@@ -452,7 +452,7 @@ def runTestCase(test_details):
               test_results['fill_factor'])
         
     if write_output:
-            logs.writeResultCSV('results.csv', True, test_results)
+            logs.writeResultCSV('results/results.csv', True, test_results)
         
 
 if __name__ == '__main__':
@@ -466,6 +466,10 @@ if __name__ == '__main__':
     chunk_size      = int(options_list['chunk_size'])
     
     print(__header_print__)
+    program_start_time = time.process_time()
     for test_case in test_cases:
         runTestCase(test_case)
+    program_end_time = time.process_time()
+    program_time_taken = (program_end_time - program_start_time) * 1000
+    print('program time in ms:', program_time_taken)
         

@@ -16,6 +16,7 @@ results/
 distributions/
 configFile
 .~lock.results.csv#
+cProfile_results.txt
 
 # C extensions
 *.so

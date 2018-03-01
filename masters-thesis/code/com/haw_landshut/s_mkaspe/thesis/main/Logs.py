@@ -25,7 +25,6 @@ def writeResultCSV(file_name, append, test_results):
     so it can be imported to excel/google spreadsheets and such
     """
     is_new_file = False
-    file_name = '../results/' + file_name
     if append:
         if not os.path.isfile(file_name) or os.path.getsize(file_name) <= 4:
             is_new_file = True

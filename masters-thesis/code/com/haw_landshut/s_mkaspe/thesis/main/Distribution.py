@@ -15,7 +15,8 @@ class Distribution:
         @param keep_record: store the last read chunk for retrieval
         IMPORTANT: close the reader by calling closeReader after you're done reading from the file
         """
-        self.reader = open('../distributions/' + file_name, 'r')
+        '''prepend the ../ five times to go up to the toplevel directory'''
+        self.reader = open('distributions/' + file_name, 'r')
         self.keep_record = keep_record
         if self.keep_record:
             self.last_chunk = []
