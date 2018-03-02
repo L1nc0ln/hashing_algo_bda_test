@@ -17,9 +17,11 @@ distributions/
 configFile
 .~lock.results.csv#
 cProfile_results.txt
+xxHash/
 
 # C extensions
 *.so
+*.o
 
 # Distribution / packaging
 .Python
