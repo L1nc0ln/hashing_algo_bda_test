@@ -43,3 +43,18 @@ class CountMinSketch():
                 min_val = self.table[counter][hash_val%self.row_size]
         return min_val
     
+    def getEstimates(self, hashed_values):
+        """
+        @param hashed_values: a list of lists with the hashed values of the items for which to look for
+        @return: list with the estimated amount of times the values belonging to the hashed_values occurred in the data stream
+        """
+        min_values = []
+        for index in range(len(hashed_values[0])):
+            min_val = inf
+            for list_index in range(len(hashed_values)):
+                if self.table[list_index][hashed_values[list_index][index]%self.row_size] < min_val:
+                    min_val = self.table[list_index][hashed_values[list_index][index]%self.row_size]
+            min_values.append(min_val)
+        return min_values
+    
+    

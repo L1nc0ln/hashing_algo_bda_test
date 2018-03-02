@@ -97,8 +97,8 @@ def hashNextChunk(hash_function, seed, next_chunk_size, argument_types, unhashed
     if argument_types[data_type_index] == 'char**':
         length_infos = [0]*next_chunk_size
         length_infos = (__pointer_type_mapping__[argument_types[-2]] * next_chunk_size)(*length_infos)
-        for index, string in enumerate(argument_array[0]):
-            length_infos[index] = len(string)
+        for index in range(len(argument_array[0])):
+            length_infos[index] = len(argument_array[0][index])
         argument_array.append(length_infos)
     return_array = [0]*next_chunk_size
     return_array = (__pointer_type_mapping__[argument_types[-1]] * next_chunk_size)(*return_array)
@@ -273,6 +273,7 @@ def getCountMinStats(count_min_test, hash_function_list, test_details, test_resu
     average_real_count  = 0
     average_est_count   = 0
     max_error           = 0
+    for_time            = 0
     
     while operations_left > 0:
         next_chunk_size = chunk_size if operations_left > chunk_size else operations_left
@@ -281,16 +282,20 @@ def getCountMinStats(count_min_test, hash_function_list, test_details, test_resu
         contained_values_slice = (__pointer_type_mapping__[test_details['argument_types'][1]] * next_chunk_size)(*contained_values_slice)
         hashed_values, _ = getHashedArrays(hash_function_list, next_chunk_size, test_details['argument_types'],
                                                     contained_values_slice, test_details['seeds'])
-        for index, unhashed_val in enumerate(contained_values_slice):
-            fetch = itemgetter(index)
-            est_val = count_min_test.getEstimate(list(map(fetch, hashed_values)))
-            real_val = count_min_test.getRealValue(unhashed_val)
-            average_est_count = average_est_count + est_val
-            average_real_count = average_real_count + real_val
-            average_error = average_error + (real_val - est_val) * (real_val - est_val)
-            if abs(real_val - est_val) > max_error:
-                max_error = abs(real_val - est_val)
+        start_for_time = time.process_time()
+        est_vals = count_min_test.getEstimates(hashed_values)
+        real_vals = count_min_test.getRealValues(contained_values_slice)
+        
+        for index in range(len(contained_values_slice)):
+            average_est_count = average_est_count + est_vals[index]
+            average_real_count = average_real_count + real_vals[index]
+            average_error = average_error + (real_vals[index] - est_vals[index]) * (real_vals[index] - est_vals[index])
+            if abs(real_vals[index] - est_vals[index]) > max_error:
+                max_error = abs(real_vals[index] - est_vals[index])
+        end_for_time = time.process_time()
         operations_left = operations_left - chunk_size
+        for_time = for_time + (end_for_time - start_for_time) * 1000
+        print('for time: ', for_time)
         
     test_results['avg_real_count']  = average_real_count/total_values
     test_results['avg_est_count']   = average_est_count/total_values

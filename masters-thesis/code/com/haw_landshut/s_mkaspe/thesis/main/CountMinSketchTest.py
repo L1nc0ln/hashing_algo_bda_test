@@ -37,12 +37,29 @@ class CountMinSketchTest():
         """
         return self.count_min_sketch.getEstimate(hashed_values)
     
+    def getEstimates(self, hashed_values):
+        """
+        @param hashed_values: a list of lists with the hashed values of the items for which to look for
+        @return: list with the estimated amount of times the values belonging to the hashed_values occurred in the data stream
+        """
+        return self.count_min_sketch.getEstimates(hashed_values)
+    
     def getRealValue(self, unhashed_value):
         """
         @param unhashed_value: value for which to look up the number of times it occurred
         @return: the amount of times the provided value occurred in the data stream so far
         """
         return self.dict[unhashed_value]
+    
+    def getRealValues(self, unhashed_values):
+        """
+        @param unhashed_values: values for which to look up the number of times they occurred
+        @return: list with the amount of times the provided values occurred in the data stream so far
+        """
+        occurances = []
+        for item in unhashed_values:
+            occurances.append(self.dict[item])
+        return occurances
     
     def getContainedKeys(self):
         """
