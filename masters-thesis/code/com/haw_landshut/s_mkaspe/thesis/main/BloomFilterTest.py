@@ -46,3 +46,4 @@ class BloomFilterTest():
         @return: estimated amount of contained entries in the Bloom Filter
         """
         return self.bloom_filter.guessNumElements()
+    

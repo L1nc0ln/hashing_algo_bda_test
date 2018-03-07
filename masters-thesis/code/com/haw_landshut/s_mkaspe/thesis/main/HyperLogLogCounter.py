@@ -12,9 +12,9 @@ class HyperLogLogCounter():
     def __init__(self, p, hash_size):
         """
         @param p:
-        @param hash_size: the number of bits in the hash
+        @param __hash_size__: the number of bits in the hash
         """
-        self.hash_size = hash_size
+        self.__hash_size__ = hash_size
         assert p >= 4 & p <= 16
         self.register_shifts = hash_size - p
         '''mask to cover up the first p bits'''
