@@ -4,6 +4,8 @@
 
 import ctypes
 import random
+import numpy as np
+from com.haw_landshut.s_mkaspe.thesis.main import Mappings
 
 class Distribution:
     '''
@@ -22,8 +24,7 @@ class Distribution:
         self.min_roll = int(min_roll)
         self.max_roll = int(max_roll)
         self.keep_record = keep_record
-        if self.keep_record:
-            self.last_chunk = []
+        self.last_chunk = []
 
     
     def generateChunk(self, chunk_size, data_type):
@@ -65,9 +66,16 @@ class Distribution:
         """
         return self.last_chunk
 
-def createHashingTable(seed, number_of_bits):
-    random.seed(seed)
-    hashing_table = [[random.randint(0, pow(2, number_of_bits)) for _ in range(256)] for _ in range(4)]
-    return hashing_table
+def createHashingTable(seeds, data_type):
+    hashing_tables_list = []
+    for seed in seeds:
+        random.seed(seed)
+        number_of_bits = Mappings.pointer_num_bits_mapping[data_type]
+        hashing_table = np.empty([4, 256], dtype=Mappings.pointer_type_mapping[data_type])
+        for outer_index in range(4):
+            for inner_index in range(256):
+                hashing_table[outer_index][inner_index] = random.randint(0, pow(2, number_of_bits))
+        hashing_tables_list.append(hashing_table)
+    return hashing_tables_list
 
         
