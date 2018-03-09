@@ -18,6 +18,8 @@ configFile
 .~lock.results.csv#
 cProfile_results.txt
 xxHash/
+farmhash.cc
+farmhash.h
 
 # C extensions
 *.so
