@@ -9,7 +9,7 @@ uint32_t hash32(uint32_t x, uint64_t hash_table[4][256]){
         h ^= hash_table[index][c];
         x = x >> 8;
     }
-    x = x ^ h;
+    c = x ^ h;
     h ^= hash_table[index][c];
     h >> 32;
     return ((uint32_t) h);
