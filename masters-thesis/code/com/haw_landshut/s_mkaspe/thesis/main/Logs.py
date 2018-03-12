@@ -51,7 +51,19 @@ def __create_result_string__(test_results):
     for key in __result_list__:
         if key in test_results:
             if key != 'hash_algorithms' and key != 'seeds':
-                result_string += str(test_results[key])
+                if key == 'count_bit_flip_dist':
+                    if len(test_results[key]) == 32:
+                        '''append 32 commata to bring it inline with the header'''
+                        result_string += __listToCsv__(test_results[key]) + ',,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,'
+                    else:
+                        result_string += __listToCsv__(test_results[key])
+                elif key == 'bit_flip_dist':
+                    if len(test_results[key]) == 32:
+                        result_string += ',,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,' + __listToCsv__(test_results[key])
+                    else:
+                        result_string += __listToCsv__(test_results[key])
+                else:   
+                    result_string += str(test_results[key])
             elif key == 'hash_algorithms':
                 result_string += __resolveHashAlgorithmColumns__(test_results[key], test_results['seeds']) if 'seeds' in \
                                         test_results else __resolveHashAlgorithmColumns__(test_results[key], None)  
@@ -59,6 +71,12 @@ def __create_result_string__(test_results):
     result_string += '\n'
     return result_string
 
+def __listToCsv__(items):
+    result_string = ''
+    for item in items:
+        result_string += str(item) + ','
+    return result_string
+        
 def __resolveHashAlgorithmColumns__(hash_algorithms, seeds):
     """
     @param hash_algorithms: a list of file names that contain the hash algorithms
@@ -90,6 +108,7 @@ def __createFuckingCSVHeader__():
     complete_header = ''
     for part_string in __csv_header__:
         complete_header += part_string
+    complete_header += ','
     for index in range(64):
         complete_header += str(index) + ' bit flipped, '
     for index in reversed(range(64)):
