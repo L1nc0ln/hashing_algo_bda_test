@@ -22,6 +22,7 @@ class HyperLogLogTest():
         @param unhashed_list: the unhashed values to store for comparison later on
         @param hashed_values: a list of lists with the hashed values corresponding to the unhashed values
         """
+        assert len(unhashed_list) == len(hashed_values)
         for value in unhashed_list:
             if value in self.dict:
                 self.dict[value] += 1
