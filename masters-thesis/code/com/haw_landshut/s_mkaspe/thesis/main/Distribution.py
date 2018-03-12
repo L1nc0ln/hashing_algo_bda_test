@@ -42,9 +42,9 @@ class Distribution:
                 for index in range(chunk_size):
                     chunk.append(self.current_index + index)
                 self.current_index += chunk_size
-            chunk = (data_type * chunk_size)(*chunk)
             if self.keep_record:
                 self.last_chunk = chunk
+            chunk = (data_type * chunk_size)(*chunk)
             return chunk
         else:
             strArrayType = ctypes.c_char_p * chunk_size
