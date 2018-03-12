@@ -276,7 +276,7 @@ def hyperLogLogTest(test_details, test_results):
     time_taken_total = 0
     hyperloglog_test = HyperloglogTest.HyperLogLogTest(int(test_details['rho']), int(test_details['hash_size']))
     distribution = Distribution.Distribution(test_results['is_random'], test_results['seed'], test_results['min_roll'],
-                                             test_results['max_roll'], False)
+                                             test_results['max_roll'], True)
     with_seed = False if test_details['seeds'] == None else True
     hash_function = getHashFunctionWrapping(test_details['argument_types'], test_details['hash_algorithm'][0], with_seed)
     operations_left = num_operations
