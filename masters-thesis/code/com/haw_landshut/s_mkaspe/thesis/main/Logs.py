@@ -89,10 +89,11 @@ def __resolveHashAlgorithmColumns__(hash_algorithms, seeds):
         seeds = ['', '', '', '', '', '', '']
     return_string = ''
     for index in range(len(hash_algorithms_list)):
+        hash_algo = hash_algorithms_list[index][hash_algorithms_list[index].rfind('/'):]
         try:
-            return_string += hash_algorithms_list[index] + ',' + seeds[index] + ','
+            return_string += hash_algo + ',' + seeds[index] + ','
         except IndexError:
-            return_string += hash_algorithms_list[index] + ',,'
+            return_string += hash_algo + ',,'
     for _ in range(6 - len(hash_algorithms)):
         return_string += ', ,'
     '''add final comma to seperate from next field'''
