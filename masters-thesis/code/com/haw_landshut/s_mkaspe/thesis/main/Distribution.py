@@ -34,17 +34,7 @@ class Distribution:
         @return: a list containing the generated values, converted to the type 'data_type'
         """
         if data_type != ctypes.c_char_p:
-            chunk = []
-            if self.is_random:
-                for _ in range(chunk_size):
-                    chunk.append(random.randint(self.min_roll, self.max_roll))
-            else:
-                for index in range(chunk_size):
-                    chunk.append(self.current_index + index)
-                self.current_index += chunk_size
-            if self.keep_record:
-                self.last_chunk = chunk
-            chunk = (data_type * chunk_size)(*chunk)
+            chunk = (data_type * chunk_size)(*self.generateIntegers(chunk_size))
             return chunk
         else:
             strArrayType = ctypes.c_char_p * chunk_size
@@ -60,12 +50,25 @@ class Distribution:
                 self.last_chunk = strArray
             return strArray
     
+    def generateIntegers(self, chunk_size):
+        chunk = []
+        if self.is_random:
+            for _ in range(chunk_size):
+                chunk.append(random.randint(self.min_roll, self.max_roll))
+        else:
+            for index in range(chunk_size):
+                chunk.append(self.current_index + index)
+            self.current_index += chunk_size
+        if self.keep_record:
+            self.last_chunk = chunk
+        return chunk
+        
     def getLastChunk(self):
         """
         @return: the last generated chunk of data
         """
         return self.last_chunk
-
+    
 def createHashingTable(seeds, data_type):
     hashing_tables_list = []
     for seed in seeds:
