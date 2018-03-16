@@ -4,6 +4,7 @@
 
 import ctypes
 import time
+import bitarray
 import com.haw_landshut.s_mkaspe.thesis.main.ConfigReader as ConfigReader
 import com.haw_landshut.s_mkaspe.thesis.main.Distribution as Distribution
 import com.haw_landshut.s_mkaspe.thesis.main.HyperLogLogTest as HyperloglogTest
@@ -361,25 +362,48 @@ def avalancheTest(test_details, test_results):
     with_seed = True if test_details['seeds'] is not None else False
     hash_function = getHashFunctionWrapping(test_details['argument_types'], test_details['hash_algorithm'][0], with_seed)
     
-    this_chunk_size = int(chunk_size/(num_hash_bits + 1)) * (num_hash_bits + 1)
+    base_elems_per_iteration = int(chunk_size/(num_hash_bits + 1))
+    augmented_chunk_size = base_elems_per_iteration * (num_hash_bits + 1)
     while operations_left > 0:
-        next_chunk_size = this_chunk_size if operations_left > this_chunk_size else operations_left
+        next_chunk_size = augmented_chunk_size if operations_left * 33 > augmented_chunk_size else operations_left * 33
     
         data_type_index = 2 if with_seed else 1
-        unhashed_elems = distribution.generateChunk(int(next_chunk_size/(num_hash_bits + 1)), 
-                                                    Mappings.pointer_type_mapping[argument_types[data_type_index]])
+        unhashed_elems = []
+        if Mappings.pointer_type_mapping[argument_types[data_type_index]] != ctypes.c_char_p:
+            unhashed_elems = distribution.generateIntegers(int(next_chunk_size/(num_hash_bits + 1)))
+            unhashed_list = []
+            for element in unhashed_elems:
+                unhashed_list.append(element)
+                for mask in avalanche_test.masks:
+                    unhashed_list.append(element ^ mask)
+            unhashed_list = (Mappings.pointer_type_mapping[argument_types[data_type_index]] * next_chunk_size)(*unhashed_list)
+        else:
+            unhashed_elems = distribution.generateChunk(int(next_chunk_size/(num_hash_bits + 1)), 
+                                                        Mappings.pointer_type_mapping[argument_types[data_type_index]])
+            strArrayType = ctypes.c_char_p * next_chunk_size
+            unhashed_list = strArrayType()
+            index = 0
+            for element in unhashed_elems:
+                unhashed_list[index] = element
+                index += 1
+                string_bytes = bitarray.bitarray()
+                string_bytes.frombytes(element)
+                mask_bytes = bitarray.bitarray(len(string_bytes))
+                mask_bytes.setall(False)
+                for tmp_index in range(32):
+                    mask_bytes[tmp_index] = 1
+                    tmp_bytes = string_bytes ^ mask_bytes
+                    unhashed_list[index] = tmp_bytes.tobytes()
+                    mask_bytes[tmp_index] = 0
+                    index += 1
+        
         #create list with contents: original, 1 bit 1 flipped, 1 bit 2 flipped, ..., original 2, 2 bit 1 flipped...
-        unhashed_list = []
-        for element in unhashed_elems:
-            unhashed_list.append(element)
-            for mask in avalanche_test.masks:
-                unhashed_list.append(element ^ mask)
-        unhashed_list = (Mappings.pointer_type_mapping[argument_types[data_type_index]] * this_chunk_size)(*unhashed_list)
         hashed_list, _ = getHashedArrays([hash_function], next_chunk_size, test_details['argument_types'],
                                                     unhashed_list, test_details['seeds'])
         avalanche_test.checkFlippedBitsList(hashed_list[0], int(next_chunk_size/(num_hash_bits + 1)))
         
-        operations_left = operations_left - this_chunk_size
+        base_elems_done = base_elems_per_iteration if base_elems_per_iteration < operations_left else operations_left
+        operations_left = operations_left - base_elems_done
     
     test_results['count_bit_flip_dist'] = avalanche_test.getFlippedBitDistribution() 
     test_results['bit_flip_dist']       = avalanche_test.getBitFlippedCount()
