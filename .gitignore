@@ -20,6 +20,8 @@ cProfile_results.txt
 xxHash/
 farmhash.cc
 farmhash.h
+avalancheTest
+jenkins_full_avalanche
 
 # C extensions
 *.so
