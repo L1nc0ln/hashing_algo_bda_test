@@ -4,7 +4,7 @@
 #include "jenkins_full_avalanche.h"
 
 
-uint32_t hash( uint32_t a)
+uint32_t jenkins_full_avalancheHash( uint32_t a)
 {
     a = (a+0x7ed55d16) + (a<<12);
     a = (a^0xc761c23c) ^ (a>>19);
@@ -26,11 +26,11 @@ uint32_t jenkinsFullAvalancheHash( uint32_t a)
     return a;
 }
 
-void hashNumbers(int array_length, uint32_t* array, uint32_t* return_array)
+void jenkins_full_avalancheHashNumbers(int array_length, uint32_t* array, uint32_t* return_array)
 {
     int counter = 0;
     for(counter; counter < array_length; counter++){
-	return_array[counter] = hash(array[counter]);
+	return_array[counter] = jenkinsFullAvalancheHash(array[counter]);
     }
 }
 

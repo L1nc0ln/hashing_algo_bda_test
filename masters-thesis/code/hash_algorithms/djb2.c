@@ -1,16 +1,6 @@
 #include "stdio.h"
 #include "djb2.h"
 
-unsigned long hash(unsigned char *str){
-	unsigned long hash = 5381;
-        int c;
-
-        while (c = *str++)
-        	hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-
-        return hash;
-}
-
 unsigned long djb2Hash(unsigned char *str){
 	unsigned long hash = 5381;
         int c;
@@ -21,7 +11,7 @@ unsigned long djb2Hash(unsigned char *str){
         return hash;
 }
 
-void hashNumbers(int size, unsigned char **array, int* char_len, unsigned long *return_array){
+void djb2HashNumbers(int size, unsigned char **array, int* char_len, unsigned long *return_array){
 	int counter = 0;
 	/*
 	 * printf("c-code: size: %d\n", size);
