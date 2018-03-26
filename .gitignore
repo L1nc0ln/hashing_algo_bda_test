@@ -22,6 +22,7 @@ farmhash.cc
 farmhash.h
 avalancheTest
 jenkins_full_avalanche
+*.csv
 
 # C extensions
 *.so
