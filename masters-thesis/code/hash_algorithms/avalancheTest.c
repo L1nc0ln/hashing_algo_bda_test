@@ -50,21 +50,24 @@ void printUIntArray(uint32_t array[], int length){
 }
 
 void writeUIntArray(char* prefix, uint32_t array[], int length,
-                    char* filename){
-    FILE *file_ptr;
-    file_ptr = fopen(filename, "a");
+                    FILE *file_ptr){
     int counter = 0;
     fprintf(file_ptr, "%s", prefix);
     fprintf(file_ptr, ",");
     for(counter; counter < length; counter++){
         fprintf(file_ptr, "%d,", array[counter]);
     }
+}
+
+void writeResults(char* hash_algorithm){
+    FILE *file_ptr;
+    file_ptr = fopen("avalancheResults.csv", "a");
+    writeUIntArray(hash_algorithm, amountOfFlippedBits, 33, file_ptr);
+    writeUIntArray(hash_algorithm, timesBitFlipped, 32, file_ptr);
     fprintf(file_ptr, "\n");
 }
 
 void printResults(char* hashing_algorithm){
-    writeUIntArray(hashing_algorithm, amountOfFlippedBits, 33, "avalancheResults.csv");
-    writeUIntArray(hashing_algorithm, timesBitFlipped, 32, "avalancheResults.csv"); 
     printf("amount of flipped bits:\n");
     printUIntArray(amountOfFlippedBits, 33);
     printf("bit flipped how often:\n");
@@ -207,6 +210,7 @@ void avalancheTest(char* hash_function){
     } else if(strcmp(hash_function, XXHASH_STRING) == 0){
         avalancheTestString(xxHash32); 
     }
+    writeResults(hash_function);
     printResults(hash_function);
 }
 
@@ -218,6 +222,7 @@ void avalancheTestWSeed(char* hash_function, uint32_t seed){
     } else if(strcmp(hash_function, TWISTED_TABLE_HASHING_STRING) == 0){
         avalancheTestTwistedTableHashing(twistedTableHashingHash, seed);
     }
+    writeResults(hash_function);
     printResults(hash_function);
 }
 
