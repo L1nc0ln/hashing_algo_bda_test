@@ -4,29 +4,27 @@
 
 import ctypes
 import time
-import bitarray
 import com.haw_landshut.s_mkaspe.thesis.main.ConfigReader as ConfigReader
 import com.haw_landshut.s_mkaspe.thesis.main.Distribution as Distribution
 import com.haw_landshut.s_mkaspe.thesis.main.HyperLogLogTest as HyperloglogTest
 import com.haw_landshut.s_mkaspe.thesis.main.CountMinSketchTest as CountMinSketchTest
 import com.haw_landshut.s_mkaspe.thesis.main.BloomFilterTest as BloomFilterTest
 import com.haw_landshut.s_mkaspe.thesis.main.DistributionTest as DistributionTest
-import com.haw_landshut.s_mkaspe.thesis.main.AvalancheTest as AvalancheTest
 import com.haw_landshut.s_mkaspe.thesis.main.Logs as logs
 from _operator import itemgetter
 from com.haw_landshut.s_mkaspe.thesis.main import Mappings
 
 
-def getHashFunctionWrapping(unresolved_arguments, hash_algorithm, with_seed):
+def getHashFunctionWrapping(unresolved_arguments, library_name, with_seed):
     """
     @param unresolved_arguments: the raw arguments types from the config
-    @param hash_algorithm: the file name of the .so file that contains the hash function to be called
+    @param library_name: the file name of the .so file that contains the hash function to be called
     @param with_seed: is a seed used? y/n
     @return: function handle to be called to hash a list of elements
     """
     argument_types = resolveArgumentTypes(unresolved_arguments)
-    c_code = ctypes.CDLL(hash_algorithm)
-    hash_function = c_code.hashNumbersWSeed if with_seed else c_code.hashNumbers
+    c_library = ctypes.CDLL(library_name)
+    hash_function = Mappings.getFunctionName(library_name, c_library, with_seed)
     '''return values couldnt be read outside of the scope of the method calling it, so the return values are sent back
     via an empty array that gets filled with the results. That array is always the last passed parameter'''
     hash_function.restype = None
@@ -348,67 +346,27 @@ def distributionTest(test_details, test_results):
     
     return test_results
 
-def avalancheTest(test_details, test_results):
+def avalancheTest(test_details):
     """
     @param test_details: contains information about specifics of the test, like the hash functions to test
-    @param test_results: dict used to store the results of the test
+    Note: test results are not saved in python for the avalanche tests, they are written to the
+    avalancheResults.csv file by the called c function
     """
-    operations_left     = num_operations
-    argument_types      = test_details['argument_types']
-    num_hash_bits       = 64 if test_details['return_type'] == 'long*' else 32
-    avalanche_test      = AvalancheTest.AvalancheTest(num_hash_bits)
-    distribution = Distribution.Distribution(test_results['is_random'], test_results['seed'], test_results['min_roll'],
-                                             test_results['max_roll'], False)
-    with_seed = True if test_details['seeds'] is not None else False
-    hash_function = getHashFunctionWrapping(test_details['argument_types'], test_details['hash_algorithm'][0], with_seed)
+    with_seed = False if test_details['seeds'] == None or test_details['seeds'] == '' else True
+    c_library = ctypes.CDLL('hash_algorithms/avalancheTest.so')
+    hash_function = c_library.avalancheTestWSeed if with_seed else c_library.avalancheTest
+    '''return values couldnt be read outside of the scope of the method calling it, so the return values are sent back
+    via an empty array that gets filled with the results. That array is always the last passed parameter'''
+    hash_function.restype = None
+    hash_function.argtypes = [ctypes.c_char_p, ctypes.c_uint32] if with_seed else [ctypes.c_char_p]
+    hash_algo_name = ctypes.c_char_p(test_details['hash_algorithm'][0][test_details['hash_algorithm'][0].rfind('/') + 1:].encode('utf-8'))
+    print(hash_algo_name)
+    if with_seed:
+        print(test_details['seeds'][0])
+        hash_function(hash_algo_name, int(test_details['seeds'][0]))
+    else:
+        hash_function(hash_algo_name)
     
-    base_elems_per_iteration = int(chunk_size/(num_hash_bits + 1))
-    augmented_chunk_size = base_elems_per_iteration * (num_hash_bits + 1)
-    while operations_left > 0:
-        next_chunk_size = augmented_chunk_size if operations_left * 33 > augmented_chunk_size else operations_left * 33
-    
-        data_type_index = 2 if with_seed else 1
-        unhashed_elems = []
-        if Mappings.pointer_type_mapping[argument_types[data_type_index]] != ctypes.c_char_p:
-            unhashed_elems = distribution.generateIntegers(int(next_chunk_size/(num_hash_bits + 1)))
-            unhashed_list = []
-            for element in unhashed_elems:
-                unhashed_list.append(element)
-                for mask in avalanche_test.masks:
-                    unhashed_list.append(element ^ mask)
-            unhashed_list = (Mappings.pointer_type_mapping[argument_types[data_type_index]] * next_chunk_size)(*unhashed_list)
-        else:
-            unhashed_elems = distribution.generateChunk(int(next_chunk_size/(num_hash_bits + 1)), 
-                                                        Mappings.pointer_type_mapping[argument_types[data_type_index]])
-            strArrayType = ctypes.c_char_p * next_chunk_size
-            unhashed_list = strArrayType()
-            index = 0
-            for element in unhashed_elems:
-                unhashed_list[index] = element
-                index += 1
-                string_bytes = bitarray.bitarray()
-                string_bytes.frombytes(element)
-                mask_bytes = bitarray.bitarray(len(string_bytes))
-                mask_bytes.setall(False)
-                for tmp_index in range(32):
-                    mask_bytes[tmp_index] = 1
-                    tmp_bytes = string_bytes ^ mask_bytes
-                    unhashed_list[index] = tmp_bytes.tobytes()
-                    mask_bytes[tmp_index] = 0
-                    index += 1
-        
-        #create list with contents: original, 1 bit 1 flipped, 1 bit 2 flipped, ..., original 2, 2 bit 1 flipped...
-        hashed_list, _ = getHashedArrays([hash_function], next_chunk_size, test_details['argument_types'],
-                                                    unhashed_list, test_details['seeds'])
-        avalanche_test.checkFlippedBitsList(hashed_list[0], int(next_chunk_size/(num_hash_bits + 1)))
-        
-        base_elems_done = base_elems_per_iteration if base_elems_per_iteration < operations_left else operations_left
-        operations_left = operations_left - base_elems_done
-    
-    test_results['count_bit_flip_dist'] = avalanche_test.getFlippedBitDistribution() 
-    test_results['bit_flip_dist']       = avalanche_test.getBitFlippedCount()
-    
-    return test_results
     
 def processDistributionDetails(distribution_details, test_results):
     """
@@ -447,32 +405,31 @@ def runTestCase(test_details):
     test_results['hash_algorithms'] = test_details['hash_algorithm']
     test_results['seeds']           = test_details['seeds']
     test_results['num_operations']  = num_operations
-    if 'table_seed' in test_details:
-        test_details['seeds'] = Distribution.createHashingTable(test_details['seeds'],
-                                                               test_details['argument_types'][1])
-    processDistributionDetails(test_details['distribution_details'], test_results)
-    if test_details['test']   == 'distribution':
-        test_results = distributionTest(test_details, test_results)
-        for key in test_results.keys():
-            print('key: ' , key, ', value:', test_results[key])
-    elif test_details['test'] == 'avalanche':
-        test_results = avalancheTest(test_details, test_results)
-        print('count distribution: ', test_results['count_bit_flip_dist'])
-        print('bit flip distribution: ', test_results['bit_flip_dist'])
-    elif test_details['test'] == 'hyperloglog':
-        test_results = hyperLogLogTest(test_details, test_results)
-        print('est: ', test_results['est_dist_elems'], 'real: ', test_results['dist_elems'])
-    elif test_details['test'] == 'countMin':
-        test_results = countMinTest(test_details, test_results)
-        print('avg_real: ', test_results['avg_real_count'], ' avg est:', test_results['avg_est_count'], 'avg error:',
-              test_results['avg_error'], 'max error:', test_results['max_error'],'time taken hashing:', test_results['time_taken'])
-    elif test_details['test'] == 'bloomFilter':
-        test_results = bloomFilterTest(test_details, test_results)
-        print('num_bloom_tests: ', test_results['num_bloom_tests'], 'false_pos: ', test_results['false_pos'], 'fill_factor: ',
-              test_results['fill_factor'])
-        
-    if write_output:
-            logs.writeResultCSV('results/results.csv', True, test_results)
+    if test_details['test'] == 'avalanche':
+        test_results = avalancheTest(test_details)
+    else:
+        if 'table_seed' in test_details:
+            test_details['seeds'] = Distribution.createHashingTable(test_details['seeds'],
+                                                                   test_details['argument_types'][1])
+        processDistributionDetails(test_details['distribution_details'], test_results)
+        if test_details['test']   == 'distribution':
+            test_results = distributionTest(test_details, test_results)
+            for key in test_results.keys():
+                print('key: ' , key, ', value:', test_results[key])
+        elif test_details['test'] == 'hyperloglog':
+            test_results = hyperLogLogTest(test_details, test_results)
+            print('est: ', test_results['est_dist_elems'], 'real: ', test_results['dist_elems'])
+        elif test_details['test'] == 'countMin':
+            test_results = countMinTest(test_details, test_results)
+            print('avg_real: ', test_results['avg_real_count'], ' avg est:', test_results['avg_est_count'], 'avg error:',
+                  test_results['avg_error'], 'max error:', test_results['max_error'],'time taken hashing:', test_results['time_taken'])
+        elif test_details['test'] == 'bloomFilter':
+            test_results = bloomFilterTest(test_details, test_results)
+            print('num_bloom_tests: ', test_results['num_bloom_tests'], 'false_pos: ', test_results['false_pos'], 'fill_factor: ',
+                  test_results['fill_factor'])
+            
+        if write_output:
+                logs.writeResultCSV('results/results.csv', True, test_results)
         
 
 if __name__ == '__main__':

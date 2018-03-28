@@ -8,7 +8,7 @@ __result_list__ = ['test_type', 'hash_algorithms', 'num_operations', 'is_random'
                'max_roll', 'time_taken', 'collisions', 'chi_square', 'left_rim', 'left_value',
                'right_rim', 'right_value', 'streak_1', 'streak_2', 'streak_3', 'streak_4', 'streak_5', 'streak_6', 'streak_7',
                'streak_8', 'streak_9', 'streak_10+', 'max_streak', 'est_dist_elems', 'dist_elems', 'avg_real_count', 'avg_est_count', 'avg_error',
-               'max_error', 'bloom_capacity', 'num_bloom_tests', 'false_pos', 'fill_factor', 'count_bit_flip_dist', 'bit_flip_dist']
+               'max_error', 'bloom_capacity', 'num_bloom_tests', 'false_pos', 'fill_factor']
 __csv_header__ = ['test type', 'hash algorithm 1', 'seed 1', 'hash algorithm 2', 'seed 2', 'hash algorithm 3', 'seed 3', 
                   'hash algorithm 4', 'seed 4', 'hash algorithm 5', 'seed 5', 'hash algorithm 6', 'seed 6', 'hash algorithm 7',
                   'seed 7', 'num operations', 'is random', 'seed', 'number of elements', 'minimum roll', 'maximum roll',
@@ -51,6 +51,7 @@ def __create_result_string__(test_results):
     """
     result_string = ''
     for key in __result_list__:
+        print(key)
         if key in test_results:
             if key != 'hash_algorithms' and key != 'seeds':
                 if key == 'count_bit_flip_dist':
@@ -118,10 +119,6 @@ def __createFuckingCSVHeader__():
     for part_string in __csv_header__:
         complete_header += part_string
     complete_header += __delimiter__
-    for index in range(64):
-        complete_header += str(index) + ' bit flipped' + __delimiter__
-    for index in reversed(range(64)):
-        complete_header += 'times bit ' + str(index) + ' was flipped' + __delimiter__
     complete_header += '\n'
     return complete_header
             
