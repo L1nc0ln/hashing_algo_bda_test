@@ -19,7 +19,7 @@ static const char TWISTED_TABLE_HASHING_STRING[] = "twistedTableHashing.so";
 static const char THOMAS_WANG_STRING[] = "thomas_wang_hash.so";
 static const char XXHASH_STRING[] = "xxhash.so";
 static const int NUMBER_STRING_SIZE = 12;
-const int NUMBER_OF_LOOPS = 1 << 20;
+static const char delimiter = ';';
 const uint32_t masks[] = {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768,
                           65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608, 16777216,
                           33554432, 67108864, 134217728, 268435456, 536870912, 1073741824, 2147483648};
@@ -28,6 +28,7 @@ const int BITS_IN_BYTE = 8;
 const int MASK_LEN = 32;
 uint32_t amountOfFlippedBits[33] = {0};
 uint32_t timesBitFlipped[32] = {0};
+int numberOfLoops = 1 << 20;
 
 void printBinary(uint32_t input){
     while (input) {
@@ -44,7 +45,7 @@ void printUIntArray(uint32_t array[], int length){
     int counter = 0;
     printf("[");
     for(counter; counter < length - 1; counter++){
-        printf("%d,", array[counter]);
+        printf("%d%c", array[counter], delimiter);
     }
     printf("%d]\n", array[length - 1]);
 }
@@ -53,7 +54,7 @@ void writeUIntArray(char* prefix, uint32_t array[], int length,
                     FILE *file_ptr){
     int counter = 0;
     fprintf(file_ptr, "%s", prefix);
-    fprintf(file_ptr, ",");
+    fprintf(file_ptr, "%c", delimiter);
     for(counter; counter < length; counter++){
         fprintf(file_ptr, "%d,", array[counter]);
     }
@@ -62,8 +63,10 @@ void writeUIntArray(char* prefix, uint32_t array[], int length,
 void writeResults(char* hash_algorithm){
     FILE *file_ptr;
     file_ptr = fopen("avalancheResults.csv", "a");
+    char numOperationsString[12];
+    sprintf(numOperationsString, "%d", numberOfLoops);
     writeUIntArray(hash_algorithm, amountOfFlippedBits, 33, file_ptr);
-    writeUIntArray(hash_algorithm, timesBitFlipped, 32, file_ptr);
+    writeUIntArray(numOperationsString, timesBitFlipped, 32, file_ptr);
     fprintf(file_ptr, "\n");
 }
 
@@ -91,7 +94,7 @@ void avalancheTestUint(uint32_t (*f_ptr)(uint32_t)){
     start = clock();
     uint32_t counter = 0;
     int mask_counter = 0;
-    for(counter = 0; counter < NUMBER_OF_LOOPS; counter++){
+    for(counter = 0; counter < numberOfLoops; counter++){
         uint32_t original_val = (*f_ptr)(counter);
         for(mask_counter = 0; mask_counter < MASK_LEN; mask_counter++){
             uint32_t changed_val = (*f_ptr)(counter ^ masks[mask_counter]);
@@ -115,7 +118,7 @@ void avalancheTestTableHashing(uint32_t (*f_ptr)(uint32_t x, uint32_t hash_table
     start = clock();
     uint32_t counter = 0;
     int mask_counter = 0;
-    for(counter = 0; counter < NUMBER_OF_LOOPS; counter++){
+    for(counter = 0; counter < numberOfLoops; counter++){
         uint32_t original_val = (*f_ptr)(counter, hashing_table);
         for(mask_counter = 0; mask_counter < MASK_LEN; mask_counter++){
             uint32_t changed_val = (*f_ptr)(counter ^ masks[mask_counter], hashing_table);
@@ -140,7 +143,7 @@ void avalancheTestTwistedTableHashing(uint32_t (*f_ptr)(uint32_t x, uint64_t has
     start = clock();
     uint32_t counter = 0;
     int mask_counter = 0;
-    for(counter = 0; counter < NUMBER_OF_LOOPS; counter++){
+    for(counter = 0; counter < numberOfLoops; counter++){
         uint32_t original_val = (*f_ptr)(counter, hashing_table);
         for(mask_counter = 0; mask_counter < MASK_LEN; mask_counter++){
             uint32_t changed_val = (*f_ptr)(counter ^ masks[mask_counter], hashing_table);
@@ -159,7 +162,7 @@ void avalancheTestString(uint32_t (*f_ptr)(unsigned char*, int)){
     int mask_counter = 0;
     unsigned char original_string[NUMBER_STRING_SIZE];
     unsigned char changed_string[NUMBER_STRING_SIZE];
-    for(counter = 0; counter < NUMBER_OF_LOOPS; counter++){
+    for(counter = 0; counter < numberOfLoops; counter++){
         sprintf(original_string, "%d", counter);
         uint32_t original_val = (*f_ptr)(original_string, NUMBER_STRING_SIZE);
         for(int char_index = 0; char_index < NUMBER_STRING_SIZE; char_index++){
@@ -183,7 +186,7 @@ void avalancheTestStringWSeed(unsigned int (*f_ptr)(unsigned char*, int, uint32_
     int mask_counter = 0;
     unsigned char original_string[NUMBER_STRING_SIZE];
     unsigned char changed_string[NUMBER_STRING_SIZE];
-    for(counter = 0; counter < NUMBER_OF_LOOPS; counter++){
+    for(counter = 0; counter < numberOfLoops; counter++){
         sprintf(original_string, "%d", counter);
         uint32_t original_val = (*f_ptr)(original_string, NUMBER_STRING_SIZE, seed);
         for(int char_index = 0; char_index < NUMBER_STRING_SIZE; char_index++){
@@ -227,7 +230,7 @@ void avalancheTestWSeed(char* hash_function, uint32_t seed){
 }
 
 int main(){
-    printf("number of loops: %d\n", NUMBER_OF_LOOPS);
+    printf("number of loops: %d\n", numberOfLoops);
     avalancheTest("xxhash.so"); 
 }
 
