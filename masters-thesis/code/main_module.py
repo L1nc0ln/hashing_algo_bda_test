@@ -230,9 +230,9 @@ def getCountMinStats(count_min_test, hash_function_list, test_details, test_resu
     Retrieves the original unhashed values from the countMinSketchTest data structure and hashes them in chunks again 
     since storing all hashed values doesnt seem feasible
     """
-    contained_values    = count_min_test.getContainedKeys()
-    total_values        = len(contained_values)
-    operations_left     = total_values
+    contained_values    = count_min_test.getTop1000Keys()
+    total_values        = 1000
+    operations_left     = 1000
     current_index       = 0
     average_error       = 0
     average_real_count  = 0
@@ -360,9 +360,7 @@ def avalancheTest(test_details):
     hash_function.restype = None
     hash_function.argtypes = [ctypes.c_char_p, ctypes.c_uint32] if with_seed else [ctypes.c_char_p]
     hash_algo_name = ctypes.c_char_p(test_details['hash_algorithm'][0][test_details['hash_algorithm'][0].rfind('/') + 1:].encode('utf-8'))
-    print(hash_algo_name)
     if with_seed:
-        print(test_details['seeds'][0])
         hash_function(hash_algo_name, int(test_details['seeds'][0]))
     else:
         hash_function(hash_algo_name)

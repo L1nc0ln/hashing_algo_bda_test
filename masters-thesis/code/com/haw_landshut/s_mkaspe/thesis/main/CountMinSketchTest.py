@@ -2,6 +2,7 @@
 @author: Michael Kaspera
 """
 import com.haw_landshut.s_mkaspe.thesis.main.CountMinSketch as CountMinSketch
+import heapq
 
 class CountMinSketchTest():
     """
@@ -66,4 +67,10 @@ class CountMinSketchTest():
         @return: a list containing all unhashed values that occurred in the data stream so far
         """
         return list(self.dict)
+    
+    def getTop1000Keys(self):
+        """
+        @return: list of the 1000 most called elements
+        """
+        return heapq.nlargest(1000, self.dict, key=self.dict.get)
     
