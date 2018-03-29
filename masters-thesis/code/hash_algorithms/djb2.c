@@ -19,6 +19,6 @@ void djb2HashNumbers(int size, unsigned char **array, int* char_len, unsigned lo
 	 * printf("c-code: returnArray access: %lu\n", returnArray[size-1]);
 	 */
 	for(counter = 0; counter < size; counter++){
-		return_array[counter] = hash(array[counter]);
+		return_array[counter] = djb2Hash(array[counter]);
 	}
 }
