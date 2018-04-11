@@ -10,10 +10,12 @@
 #include "thomas_wang_hash.h"
 #include "twistedTableHashing.h"
 #include "xxhash.h"
+#include "knuth_hash.h"
 
 static const char JENKINS_STRING[] = "jenkins_full_avalanche.so";
 //static const char DJB2_STRING[] = "djb2.so";
 static const char SEVEN_SHIFT_STRING[] = "seven_shift.so";
+static const char KNUTH_HASH_STRING[] = "knuth_hash.so";
 static const char TABLE_HASHING_STRING[] = "tableHashing.so";
 static const char TWISTED_TABLE_HASHING_STRING[] = "twistedTableHashing.so";
 static const char THOMAS_WANG_STRING[] = "thomas_wang_hash.so";
@@ -26,9 +28,9 @@ const uint32_t masks[] = {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 409
 const int byteMask[] = {1, 2, 4, 8, 16, 32, 64, 128};
 const int BITS_IN_BYTE = 8;
 const int MASK_LEN = 32;
-uint32_t amountOfFlippedBits[33] = {0};
-uint32_t timesBitFlipped[32] = {0};
-int numberOfLoops = 1 << 20;
+long amountOfFlippedBits[33] = {0};
+long timesBitFlipped[32] = {0};
+int numberOfLoops = 1 << 30;
 
 void printBinary(uint32_t input){
     while (input) {
@@ -41,33 +43,33 @@ void printBinary(uint32_t input){
     printf("\n");
 }
 
-void printUIntArray(uint32_t array[], int length){
+void printUIntArray(long array[], int length){
     int counter = 0;
     printf("[");
     for(counter; counter < length - 1; counter++){
-        printf("%d%c", array[counter], delimiter);
+        printf("%ld%c", array[counter], delimiter);
     }
-    printf("%d]\n", array[length - 1]);
+    printf("%ld]\n", array[length - 1]);
 }
 
-void writeUIntArray(char* prefix, uint32_t array[], int length,
+void writeUIntArray(char* prefix, long array[], int length,
                     FILE *file_ptr){
     int counter = 0;
     fprintf(file_ptr, "%s", prefix);
     fprintf(file_ptr, "%c", delimiter);
     for(counter; counter < length; counter++){
-        fprintf(file_ptr, "%d,", array[counter]);
+        fprintf(file_ptr, "%ld%c", array[counter], delimiter);
     }
 }
 
-void writeResults(char* hash_algorithm){
+void writeResults(char* hash_algorithm, uint32_t seed){
     FILE *file_ptr;
     file_ptr = fopen("avalancheResults.csv", "a");
     char numOperationsString[12];
     sprintf(numOperationsString, "%d", numberOfLoops);
     writeUIntArray(hash_algorithm, amountOfFlippedBits, 33, file_ptr);
     writeUIntArray(numOperationsString, timesBitFlipped, 32, file_ptr);
-    fprintf(file_ptr, "\n");
+    fprintf(file_ptr, "%d\n", seed);
 }
 
 void printResults(char* hashing_algorithm){
@@ -98,6 +100,23 @@ void avalancheTestUint(uint32_t (*f_ptr)(uint32_t)){
         uint32_t original_val = (*f_ptr)(counter);
         for(mask_counter = 0; mask_counter < MASK_LEN; mask_counter++){
             uint32_t changed_val = (*f_ptr)(counter ^ masks[mask_counter]);
+            checkFlippedBits(original_val ^ changed_val);
+        }
+    }
+    end = clock();
+    double cpu_time_used = (((double)(end - start)) / CLOCKS_PER_SEC) * 1000;
+    printf("it took %f ms to execute this code\n", cpu_time_used);
+}
+
+void avalancheTestUintWSeed(uint32_t (*f_ptr)(uint32_t, uint32_t), uint32_t seed){
+    clock_t start, end;
+    start = clock();
+    uint32_t counter = 0;
+    int mask_counter = 0;
+    for(counter = 0; counter < numberOfLoops; counter++){
+        uint32_t original_val = (*f_ptr)(counter, seed);
+        for(mask_counter = 0; mask_counter < MASK_LEN; mask_counter++){
+            uint32_t changed_val = (*f_ptr)(counter ^ masks[mask_counter], seed);
             checkFlippedBits(original_val ^ changed_val);
         }
     }
@@ -212,8 +231,10 @@ void avalancheTest(char* hash_function){
         avalancheTestUint(thomasWangHash);
     } else if(strcmp(hash_function, XXHASH_STRING) == 0){
         avalancheTestString(xxHash32); 
+    } else if(strcmp(hash_function, KNUTH_HASH_STRING) == 0){
+        avalancheTestUint(knuth_hashHash);
     }
-    writeResults(hash_function);
+    writeResults(hash_function, 0);
     printResults(hash_function);
 }
 
@@ -224,13 +245,16 @@ void avalancheTestWSeed(char* hash_function, uint32_t seed){
         avalancheTestTableHashing(tableHashingHash, seed);
     } else if(strcmp(hash_function, TWISTED_TABLE_HASHING_STRING) == 0){
         avalancheTestTwistedTableHashing(twistedTableHashingHash, seed);
+    } else if(strcmp(hash_function, KNUTH_HASH_STRING) == 0){
+        avalancheTestUintWSeed(knuth_hashHashWSeed, seed);
     }
-    writeResults(hash_function);
+    writeResults(hash_function, seed);
     printResults(hash_function);
 }
 
 int main(){
     printf("number of loops: %d\n", numberOfLoops);
-    avalancheTest("xxhash.so"); 
+    avalancheTest("jenkins_full_avalanche.so"); 
+    avalancheTest("seven_shift.so");
 }
 
