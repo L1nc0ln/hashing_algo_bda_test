@@ -222,7 +222,8 @@ void avalancheTestStringWSeed(unsigned int (*f_ptr)(unsigned char*, int, uint32_
 
 }
 
-void avalancheTest(char* hash_function){
+void avalancheTest(char* hash_function, int num_loops){
+    numberOfLoops = num_loops;
     if(strcmp(hash_function, JENKINS_STRING) == 0){
         avalancheTestUint(jenkinsFullAvalancheHash);
     } else if(strcmp(hash_function, SEVEN_SHIFT_STRING) == 0){
@@ -238,7 +239,8 @@ void avalancheTest(char* hash_function){
     printResults(hash_function);
 }
 
-void avalancheTestWSeed(char* hash_function, uint32_t seed){
+void avalancheTestWSeed(char* hash_function, int num_loops, uint32_t seed){
+    numberOfLoops = num_loops;
     if(strcmp(hash_function, XXHASH_STRING) == 0){
         avalancheTestStringWSeed(xxHashSeed32,seed); 
     } else if(strcmp(hash_function, TABLE_HASHING_STRING) == 0){
@@ -250,11 +252,5 @@ void avalancheTestWSeed(char* hash_function, uint32_t seed){
     }
     writeResults(hash_function, seed);
     printResults(hash_function);
-}
-
-int main(){
-    printf("number of loops: %d\n", numberOfLoops);
-    avalancheTest("jenkins_full_avalanche.so"); 
-    avalancheTest("seven_shift.so");
 }
 

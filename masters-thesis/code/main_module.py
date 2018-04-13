@@ -13,6 +13,7 @@ import com.haw_landshut.s_mkaspe.thesis.main.DistributionTest as DistributionTes
 import com.haw_landshut.s_mkaspe.thesis.main.Logs as logs
 from _operator import itemgetter
 from com.haw_landshut.s_mkaspe.thesis.main import Mappings
+from com.haw_landshut.s_mkaspe.thesis.old.mainmodule import num_operations
 
 
 def getHashFunctionWrapping(unresolved_arguments, library_name, with_seed):
@@ -361,9 +362,9 @@ def avalancheTest(test_details):
     hash_function.argtypes = [ctypes.c_char_p, ctypes.c_uint32] if with_seed else [ctypes.c_char_p]
     hash_algo_name = ctypes.c_char_p(test_details['hash_algorithm'][0][test_details['hash_algorithm'][0].rfind('/') + 1:].encode('utf-8'))
     if with_seed:
-        hash_function(hash_algo_name, int(test_details['seeds'][0]))
+        hash_function(hash_algo_name, int(num_operations), int(test_details['seeds'][0]))
     else:
-        hash_function(hash_algo_name)
+        hash_function(hash_algo_name, int(num_operations))
     
     
 def processDistributionDetails(distribution_details, test_results):

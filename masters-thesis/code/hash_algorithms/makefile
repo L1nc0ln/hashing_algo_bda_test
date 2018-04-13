@@ -10,7 +10,7 @@ SHARED_LIB_SOURCES = seven_shift.c jenkins_full_avalanche.c tableHashing.c \
 SHARED_LIBS = seven_shift.so jenkins_full_avalanche.so tableHashing.so \
 	      thomas_wang_hash.so twistedTableHashing.so djb2.so knuth_hash.so
 
-EXECUTABLE = avalancheTest
+EXECUTABLE = avalancheTestMain
 
 SHARED_AVALANCHE_LIB = avalanche_so
 
@@ -18,7 +18,7 @@ $(SHARED_AVALANCHE_LIB) : $(SOURCES)
 	$(CC) -shared -o avalancheTest.so -fPIC $(SOURCES)
 
 $(EXECUTABLE) : $(SOURCES)
-	$(CC) -o $(EXECUTABLE) $(SOURCES)
+	$(CC) -o $(EXECUTABLE) $(SOURCES) avalancheTestMain.c
 
 hash_shared_libs : $(SHARED_LIB_SOURCES)
 	gcc -shared -o seven_shift.so -fPIC seven_shift.c

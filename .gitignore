@@ -21,6 +21,7 @@ xxHash/
 farmhash.cc
 farmhash.h
 avalancheTest
+avalancheTestMain*
 jenkins_full_avalanche
 *.csv
 
