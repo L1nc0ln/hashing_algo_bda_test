@@ -12,12 +12,12 @@ class Distribution:
     classdocs
     '''
 
-    def __init__(self, is_random, seed, min_roll, max_roll, keep_record):
+    def __init__(self, random_type, seed, min_roll, max_roll, keep_record):
         """
         @param seed: the seed to use to create random data
         @param keep_record: store the last read chunk for retrieval
         """
-        self.is_random = is_random
+        self.random_type = random_type
         '''only for non-random distribution'''
         self.current_index = int(min_roll)
         random.seed(seed)
@@ -39,9 +39,12 @@ class Distribution:
         else:
             strArrayType = ctypes.c_char_p * chunk_size
             strArray = strArrayType()
-            if self.is_random:
+            if self.random_type == "random_uniform":
                 for index in range(chunk_size):
                     strArray[index] = (str(random.randint(self.min_roll, self.max_roll))).encode('UTF8')
+            elif self.random_type == "random_exponential":
+                mid_val = (self.min_roll + self.max_roll) / 2
+                strArray[index] = (str(random.expovariate(1/mid_val))).encode('UTF8')
             else:
                 for index in range(chunk_size):
                     strArray[index] = (str(self.current_index + index)).encode('UTF8')
@@ -52,9 +55,13 @@ class Distribution:
     
     def generateIntegers(self, chunk_size):
         chunk = []
-        if self.is_random:
+        if self.random_type == "random_uniform":
             for _ in range(chunk_size):
                 chunk.append(random.randint(self.min_roll, self.max_roll))
+        elif self.random_type == "random_exponential":
+            mid_val = (self.min_roll + self.max_roll) / 2
+            for _ in range(chunk_size):
+                chunk.append(random.expovariate(1/mid_val))
         else:
             for index in range(chunk_size):
                 chunk.append(self.current_index + index)
