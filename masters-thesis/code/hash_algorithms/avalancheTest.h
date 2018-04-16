@@ -4,6 +4,6 @@
 
 void avalancheTest(char* hash_function, int num_loops);
 
-void avalancheTestWSeed(char* hash_function, int num_loops, uint32_t seed);
+void avalancheTestWSeed(char* hash_function, uint32_t seed, int num_loops);
 
 #endif
