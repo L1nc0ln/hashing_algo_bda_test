@@ -4,14 +4,15 @@
 
 import os
 
-__result_list__ = ['test_type', 'hash_algorithms', 'num_operations', 'is_random', 'seed', 'num_elements', 'min_roll',
-               'max_roll', 'time_taken', 'collisions', 'chi_square', 'left_rim', 'left_value',
+__result_list__ = ['test_type', 'hash_algorithms', 'num_operations', 'random_type', 'seed', 'num_elements', 'distribution_param_1',
+               'distribution_param_2', 'time_taken', 'collisions', 'chi_square', 'left_rim', 'left_value',
                'right_rim', 'right_value', 'streak_1', 'streak_2', 'streak_3', 'streak_4', 'streak_5', 'streak_6', 'streak_7',
                'streak_8', 'streak_9', 'streak_10+', 'max_streak', 'est_dist_elems', 'dist_elems', 'avg_real_count', 'avg_est_count', 'avg_error',
                'max_error', 'bloom_capacity', 'num_bloom_tests', 'false_pos', 'fill_factor']
 __csv_header__ = ['test type', 'hash algorithm 1', 'seed 1', 'hash algorithm 2', 'seed 2', 'hash algorithm 3', 'seed 3', 
                   'hash algorithm 4', 'seed 4', 'hash algorithm 5', 'seed 5', 'hash algorithm 6', 'seed 6', 'hash algorithm 7',
-                  'seed 7', 'num operations', 'is random', 'seed', 'number of elements', 'minimum roll', 'maximum roll',
+                  'seed 7', 'num operations', 'type of random', 'seed', 'number of elements', 'first distribution parameter',
+                  'second distribution parameter',
                   'time taken hashing', 'collisions', 'chi square', 'chi sq left rim', 'left rim val', 'chi sq right rim',
                   'right rim val', 'streak 1', 'streak 2', 'streak 3', 'streak 4', 'streak 5', 'streak 6', 'streak 7', 'streak 8',
                   'streak 9', 'streak 10+', 'max streak', 'estimated distinct elements', 'distinct elements', 'average real count',

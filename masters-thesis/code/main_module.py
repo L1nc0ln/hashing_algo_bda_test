@@ -93,8 +93,8 @@ def fillDataStructure(test_details, hash_function_list, put_function, time_taken
     goes through the list of provided hash functions and gets the hashed values for each of the hash functions
     and then stores those values by calling the provided put_function
     """
-    distribution = Distribution.Distribution(test_results['is_random'], test_results['seed'], test_results['min_roll'],
-                                             test_results['max_roll'], False)
+    distribution = Distribution.Distribution(test_results['random_type'], test_results['seed'], test_results['distribution_param_1'],
+                                             test_results['distribution_param_2'], False)
     operations_left = num_operations
     
     while operations_left > 0:
@@ -169,8 +169,8 @@ def getBloomFilterStats(bloom_filter_test, hash_function_list, test_details, tes
     positives
     """
     num_false_positives = 0
-    distribution = Distribution.Distribution(test_results['is_random'], test_results['seed'], test_results['min_roll'],
-                                             test_results['max_roll'], False)
+    distribution = Distribution.Distribution(test_results['random_type'], test_results['seed'], test_results['distribution_param_1'],
+                                             test_results['distribution_param_2'], False)
     num_tests = test_details['num_tests']
     operations_left = int(num_tests)
     
@@ -275,8 +275,8 @@ def hyperLogLogTest(test_details, test_results):
     """
     time_taken_total = 0
     hyperloglog_test = HyperloglogTest.HyperLogLogTest(int(test_details['rho']), int(test_details['hash_size']))
-    distribution = Distribution.Distribution(test_results['is_random'], test_results['seed'], test_results['min_roll'],
-                                             test_results['max_roll'], True)
+    distribution = Distribution.Distribution(test_results['random_type'], test_results['seed'], test_results['distribution_param_1'],
+                                             test_results['distribution_param_2'], True)
     with_seed = False if test_details['seeds'] == None else True
     hash_function = getHashFunctionWrapping(test_details['argument_types'], test_details['hash_algorithm'][0], with_seed)
     operations_left = num_operations
@@ -315,8 +315,8 @@ def distributionTest(test_details, test_results):
     operations_left     = num_operations
     argument_types      = test_details['argument_types']
     distribution_test   = DistributionTest.DistributionTest(num_buckets, num_possible_hashes)
-    distribution = Distribution.Distribution(test_results['is_random'], test_results['seed'], test_results['min_roll'],
-                                             test_results['max_roll'], False)
+    distribution = Distribution.Distribution(test_results['random_type'], test_results['seed'], test_results['distribution_param_1'],
+                                             test_results['distribution_param_2'], False)
     with_seed = False if test_details['seeds'] == None else True
     hash_function = getHashFunctionWrapping(test_details['argument_types'], test_details['hash_algorithm'][0], with_seed)
                 
@@ -381,17 +381,23 @@ def processDistributionDetails(distribution_details, test_results):
     """
     distribution_details_list = distribution_details.split('_')
     if distribution_details_list[0] == 'ordered':
-        test_results['is_random']       = 'false'
-        test_results['num_elements']    = distribution_details_list[1]
-        test_results['min_roll']        = distribution_details_list[2]
-        test_results['max_roll']        = distribution_details_list[3]
+        test_results['random_type']             = 'ordered'
+        test_results['num_elements']            = distribution_details_list[1]
+        test_results['distribution_param_1']    = distribution_details_list[2]
+        test_results['distribution_param_2']    = distribution_details_list[3]
         test_results['seed']            = None
-    else:
-        test_results['is_random']       = 'true'
-        test_results['seed']            = distribution_details_list[1]
-        test_results['num_elements']    = distribution_details_list[2]
-        test_results['min_roll']        = distribution_details_list[3]
-        test_results['max_roll']        = distribution_details_list[4]
+    elif distribution_details_list[0] == 'random':
+        test_results['random_type']             = 'random_uniform'
+        test_results['seed']                    = distribution_details_list[1]
+        test_results['num_elements']            = distribution_details_list[2]
+        test_results['distribution_param_1']    = distribution_details_list[3]
+        test_results['distribution_param_2']    = distribution_details_list[4]
+    elif distribution_details_list[0] == 'exp':
+        test_results['random_type']             = 'random_exponential'
+        test_results['seed']                    = distribution_details_list[1]
+        test_results['num_elements']            = distribution_details_list[2]
+        test_results['distribution_param_1']    = distribution_details_list[3]
+        test_results['distribution_param_2']    = distribution_details_list[4]
 
 def runTestCase(test_details):
     """
