@@ -43,7 +43,7 @@ void printBinary(uint32_t input){
     printf("\n");
 }
 
-void printUIntArray(long array[], int length){
+void printLongArray(long array[], int length){
     int counter = 0;
     printf("[");
     for(counter; counter < length - 1; counter++){
@@ -52,11 +52,19 @@ void printUIntArray(long array[], int length){
     printf("%ld]\n", array[length - 1]);
 }
 
+void printUIntArray(uint32_t array[], int length){
+    int counter = 0;
+    printf("[");
+    for(counter; counter < length - 1; counter++){
+        printf("%d%c", array[counter], delimiter);
+    }
+    printf("%d]\n", array[length - 1]);
+}
+
 void writeUIntArray(char* prefix, long array[], int length,
                     FILE *file_ptr){
     int counter = 0;
-    fprintf(file_ptr, "%s", prefix);
-    fprintf(file_ptr, "%c", delimiter);
+    fprintf(file_ptr, "%s%c", prefix, delimiter);
     for(counter; counter < length; counter++){
         fprintf(file_ptr, "%ld%c", array[counter], delimiter);
     }
@@ -74,9 +82,9 @@ void writeResults(char* hash_algorithm, uint32_t seed){
 
 void printResults(char* hashing_algorithm){
     printf("amount of flipped bits:\n");
-    printUIntArray(amountOfFlippedBits, 33);
+    printLongArray(amountOfFlippedBits, 33);
     printf("bit flipped how often:\n");
-    printUIntArray(timesBitFlipped, 32);
+    printLongArray(timesBitFlipped, 32);
 }
 
 void checkFlippedBits(uint32_t flippedBits){
@@ -125,12 +133,39 @@ void avalancheTestUintWSeed(uint32_t (*f_ptr)(uint32_t, uint32_t), uint32_t seed
     printf("it took %f ms to execute this code\n", cpu_time_used);
 }
 
+/**
+ * randoms a real Uint32 number, rand() only rolls up to 2^31-1
+ * this function rolls a random number in the range [0, 2^32-1]
+ */
+uint32_t uIntRandom(){
+    uint32_t randomNumber = rand();
+    uint32_t diceRoll = rand();
+    if(diceRoll > 1073741823){
+        randomNumber = randomNumber + 2147483648;
+    }
+    return randomNumber;
+}
+
+/**
+ * since rand() only rolls a number up to 2^31-1 this method
+ * first rolls a true 32 bit random number, shifts those 32 bits
+ * 32 times to the left (thereby filling up the "higher" 32 bits)
+ * and then adds a second, random 32 bit number to it (thereby
+ * filling up the "lower" 32 bits)
+ */
+uint64_t uInt64Random(){
+    uint64_t firstPart = uIntRandom();
+    uint64_t secondPart = uIntRandom();
+    firstPart = firstPart << 32;
+    return firstPart + secondPart;
+}
+
 void avalancheTestTableHashing(uint32_t (*f_ptr)(uint32_t x, uint32_t hash_table[4][256]), uint32_t seed){
     uint32_t hashing_table [4][256];
     srand(seed);
     for(int outerCounter = 0; outerCounter < 4; outerCounter++){
         for(int innerCounter = 0; innerCounter < 256; innerCounter++){
-            hashing_table[outerCounter][innerCounter] = rand();
+            hashing_table[outerCounter][innerCounter] = uIntRandom();
         }
     }
     clock_t start, end;
@@ -155,7 +190,7 @@ void avalancheTestTwistedTableHashing(uint32_t (*f_ptr)(uint32_t x, uint64_t has
     srand(seed);
     for(int outerCounter = 0; outerCounter < 4; outerCounter++){
         for(int innerCounter = 0; innerCounter < 256; innerCounter++){
-            hashing_table[outerCounter][innerCounter] = rand();
+            hashing_table[outerCounter][innerCounter] = uInt64Random();
         }
     }
     clock_t start, end;
@@ -222,6 +257,15 @@ void avalancheTestStringWSeed(unsigned int (*f_ptr)(unsigned char*, int, uint32_
 
 }
 
+void clearCounters(){
+    for(int counter = 0; counter < 32; counter++){
+        timesBitFlipped[counter] = 0;
+    }
+    for(int counter = 0; counter < 33; counter++){
+        amountOfFlippedBits[counter] = 0;
+    }
+}
+
 void avalancheTest(char* hash_function, int num_loops){
     numberOfLoops = num_loops;
     if(strcmp(hash_function, JENKINS_STRING) == 0){
@@ -237,6 +281,7 @@ void avalancheTest(char* hash_function, int num_loops){
     }
     writeResults(hash_function, 0);
     printResults(hash_function);
+    clearCounters();
 }
 
 void avalancheTestWSeed(char* hash_function, uint32_t seed, int num_loops){
@@ -252,5 +297,6 @@ void avalancheTestWSeed(char* hash_function, uint32_t seed, int num_loops){
     }
     writeResults(hash_function, seed);
     printResults(hash_function);
+    clearCounters();
 }
 
