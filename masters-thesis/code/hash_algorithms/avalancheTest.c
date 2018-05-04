@@ -9,6 +9,7 @@
 #include "tableHashing.h"
 #include "thomas_wang_hash.h"
 #include "twistedTableHashing.h"
+#include "mixedTableHashing.h"
 #include "xxhash.h"
 #include "knuth_hash.h"
 
@@ -18,6 +19,7 @@ static const char SEVEN_SHIFT_STRING[] = "seven_shift.so";
 static const char KNUTH_HASH_STRING[] = "knuth_hash.so";
 static const char TABLE_HASHING_STRING[] = "tableHashing.so";
 static const char TWISTED_TABLE_HASHING_STRING[] = "twistedTableHashing.so";
+static const char MIXED_TABLE_HASHING_STRING[] = "mixedTableHashing.so";
 static const char THOMAS_WANG_STRING[] = "thomas_wang_hash.so";
 static const char XXHASH_STRING[] = "xxhash.so";
 static const int NUMBER_STRING_SIZE = 12;
@@ -90,7 +92,7 @@ void printResults(char* hashing_algorithm){
 void checkFlippedBits(uint32_t flippedBits){
     int numFlippedBits = 0;
     int counter = 0;
-    for(counter; counter <= 32; counter++){
+    for(counter; counter <= 31; counter++){
         if((masks[counter] & flippedBits) != 0){
             timesBitFlipped[31 - counter] += 1;
             numFlippedBits += 1;
@@ -209,6 +211,33 @@ void avalancheTestTwistedTableHashing(uint32_t (*f_ptr)(uint32_t x, uint64_t has
     printf("it took %f ms to execute this code\n", cpu_time_used);
 }
 
+void avalancheTestMixedTableHashing(uint32_t (*f_ptr)(uint32_t x, uint64_t hash_table_1[4][256],
+                                    uint32_t hash_table_2[4][256]), uint32_t seed){
+    uint64_t hashing_table [4][256];
+    uint32_t hashing_table_2 [4][256];
+    srand(seed);
+    for(int outerCounter = 0; outerCounter < 4; outerCounter++){
+        for(int innerCounter = 0; innerCounter < 256; innerCounter++){
+            hashing_table[outerCounter][innerCounter] = uInt64Random();
+            hashing_table_2[outerCounter][innerCounter] = uIntRandom();
+        }
+    }
+    clock_t start, end;
+    start = clock();
+    uint32_t counter = 0;
+    int mask_counter = 0;
+    for(counter = 0; counter < numberOfLoops; counter++){
+        uint32_t original_val = (*f_ptr)(counter, hashing_table, hashing_table_2);
+        for(mask_counter = 0; mask_counter < MASK_LEN; mask_counter++){
+            uint32_t changed_val = (*f_ptr)(counter ^ masks[mask_counter], hashing_table, hashing_table_2);
+            checkFlippedBits(original_val ^ changed_val);
+        }
+    }
+    end = clock();
+    double cpu_time_used = (((double)(end - start)) / CLOCKS_PER_SEC) * 1000;
+    printf("it took %f ms to execute this code\n", cpu_time_used);
+}
+
 void avalancheTestString(uint32_t (*f_ptr)(unsigned char*, int)){
     clock_t start, end;
     start = clock();
@@ -219,7 +248,9 @@ void avalancheTestString(uint32_t (*f_ptr)(unsigned char*, int)){
     for(counter = 0; counter < numberOfLoops; counter++){
         sprintf(original_string, "%d", counter);
         uint32_t original_val = (*f_ptr)(original_string, NUMBER_STRING_SIZE);
+        //go through all characters in the string
         for(int char_index = 0; char_index < NUMBER_STRING_SIZE; char_index++){
+            //for each character change each bit
             for(int bit_index = 0; bit_index < 8; bit_index++){
                 changed_string[char_index] = original_string[char_index] ^ byteMask[bit_index];
                 uint32_t changed_val = (*f_ptr)(changed_string, NUMBER_STRING_SIZE);
@@ -243,7 +274,9 @@ void avalancheTestStringWSeed(unsigned int (*f_ptr)(unsigned char*, int, uint32_
     for(counter = 0; counter < numberOfLoops; counter++){
         sprintf(original_string, "%d", counter);
         uint32_t original_val = (*f_ptr)(original_string, NUMBER_STRING_SIZE, seed);
+        //go through all characters in the string
         for(int char_index = 0; char_index < NUMBER_STRING_SIZE; char_index++){
+            //for each character change each bit
             for(int bit_index = 0; bit_index < 8; bit_index++){
                 changed_string[char_index] = original_string[char_index] ^ byteMask[bit_index];
                 uint32_t changed_val = (*f_ptr)(changed_string, NUMBER_STRING_SIZE, seed);
@@ -290,6 +323,8 @@ void avalancheTestWSeed(char* hash_function, uint32_t seed, int num_loops){
         avalancheTestStringWSeed(xxHashSeed32,seed); 
     } else if(strcmp(hash_function, TABLE_HASHING_STRING) == 0){
         avalancheTestTableHashing(tableHashingHash, seed);
+    } else if(strcmp(hash_function, MIXED_TABLE_HASHING_STRING) == 0){
+        avalancheTestMixedTableHashing(mixedTableHashingHash, seed);
     } else if(strcmp(hash_function, TWISTED_TABLE_HASHING_STRING) == 0){
         avalancheTestTwistedTableHashing(twistedTableHashingHash, seed);
     } else if(strcmp(hash_function, KNUTH_HASH_STRING) == 0){
