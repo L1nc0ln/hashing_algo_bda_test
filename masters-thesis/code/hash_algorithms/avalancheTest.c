@@ -12,6 +12,7 @@
 #include "mixedTableHashing.h"
 #include "xxhash.h"
 #include "knuth_hash.h"
+#include "sha256.h"
 
 static const char JENKINS_STRING[] = "jenkins_full_avalanche.so";
 //static const char DJB2_STRING[] = "djb2.so";
@@ -22,6 +23,7 @@ static const char TWISTED_TABLE_HASHING_STRING[] = "twistedTableHashing.so";
 static const char MIXED_TABLE_HASHING_STRING[] = "mixedTableHashing.so";
 static const char THOMAS_WANG_STRING[] = "thomas_wang_hash.so";
 static const char XXHASH_STRING[] = "xxhash.so";
+static const char SHA256_HASH_STRING[] = "sha256.so";
 static const int NUMBER_STRING_SIZE = 12;
 static const char delimiter = ';';
 const uint32_t masks[] = {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768,
@@ -311,6 +313,8 @@ void avalancheTest(char* hash_function, int num_loops){
         avalancheTestString(xxHash32); 
     } else if(strcmp(hash_function, KNUTH_HASH_STRING) == 0){
         avalancheTestUint(knuth_hashHash);
+    } else if(strcmp(hash_function, SHA256_HASH_STRING) == 0){
+        avalancheTestUint(uintSha256Hash);
     }
     writeResults(hash_function, 0);
     printResults(hash_function);
