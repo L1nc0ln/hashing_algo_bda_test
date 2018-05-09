@@ -61,7 +61,7 @@ class Distribution:
         elif self.random_type == "random_exponential":
             mid_val = (self.min_roll + self.max_roll) / 2
             for _ in range(chunk_size):
-                chunk.append(random.expovariate(1/mid_val))
+                chunk.append(int(random.expovariate(1/mid_val)))
         else:
             for index in range(chunk_size):
                 chunk.append(self.current_index + index)

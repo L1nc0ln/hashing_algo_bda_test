@@ -52,7 +52,6 @@ def __create_result_string__(test_results):
     """
     result_string = ''
     for key in __result_list__:
-        print(key)
         if key in test_results:
             if key != 'hash_algorithms' and key != 'seeds':
                 if key == 'count_bit_flip_dist':
