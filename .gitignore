@@ -12,6 +12,8 @@ __init__.py
 # stuff I dont want to have in
 old/
 test/
+test.*
+test
 results/
 distributions/
 configFile
