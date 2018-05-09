@@ -234,29 +234,28 @@ def getCountMinStats(count_min_test, hash_function_list, test_details, test_resu
     contained_values    = count_min_test.getTop1000Keys()
     total_values        = 1000
     operations_left     = 1000
-    current_index       = 0
     average_error       = 0
     average_real_count  = 0
     average_est_count   = 0
     max_error           = 0
     
-    while operations_left > 0:
-        next_chunk_size = chunk_size if operations_left > chunk_size else operations_left
-        end_index = current_index + next_chunk_size
-        contained_values_slice = contained_values[current_index:end_index]
-        contained_values_slice = (Mappings.pointer_type_mapping[test_details['argument_types'][1]] * next_chunk_size)(*contained_values_slice)
-        hashed_values, _ = getHashedArrays(hash_function_list, next_chunk_size, test_details['argument_types'],
-                                                    contained_values_slice, test_details['seeds'])
-        est_vals = count_min_test.getEstimates(hashed_values)
-        real_vals = count_min_test.getRealValues(contained_values_slice)
-        
-        for index in range(len(contained_values_slice)):
-            average_est_count = average_est_count + est_vals[index]
-            average_real_count = average_real_count + real_vals[index]
-            average_error = average_error + (real_vals[index] - est_vals[index]) * (real_vals[index] - est_vals[index])
-            if abs(real_vals[index] - est_vals[index]) > max_error:
-                max_error = abs(real_vals[index] - est_vals[index])
-        operations_left = operations_left - chunk_size
+    next_chunk_size = operations_left
+    contained_values_slice = contained_values
+    data_type_index = 1 if test_details['seeds'] == None else 2
+    print(contained_values_slice)
+    print(Mappings.pointer_type_mapping[test_details['argument_types'][data_type_index]])
+    contained_values_slice = (Mappings.pointer_type_mapping[test_details['argument_types'][data_type_index]] * next_chunk_size)(*contained_values_slice)
+    hashed_values, _ = getHashedArrays(hash_function_list, next_chunk_size, test_details['argument_types'],
+                                                contained_values_slice, test_details['seeds'])
+    est_vals = count_min_test.getEstimates(hashed_values)
+    real_vals = count_min_test.getRealValues(contained_values_slice)
+    
+    for index in range(len(contained_values_slice)):
+        average_est_count = average_est_count + est_vals[index]
+        average_real_count = average_real_count + real_vals[index]
+        average_error = average_error + (real_vals[index] - est_vals[index]) * (real_vals[index] - est_vals[index])
+        if abs(real_vals[index] - est_vals[index]) > max_error:
+            max_error = abs(real_vals[index] - est_vals[index])
         
     test_results['avg_real_count']  = average_real_count/total_values
     test_results['avg_est_count']   = average_est_count/total_values
@@ -385,7 +384,7 @@ def processDistributionDetails(distribution_details, test_results):
         test_results['num_elements']            = distribution_details_list[1]
         test_results['distribution_param_1']    = distribution_details_list[2]
         test_results['distribution_param_2']    = distribution_details_list[3]
-        test_results['seed']            = None
+        test_results['seed']                    = None
     elif distribution_details_list[0] == 'random':
         test_results['random_type']             = 'random_uniform'
         test_results['seed']                    = distribution_details_list[1]
