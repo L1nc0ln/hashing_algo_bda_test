@@ -3,6 +3,7 @@
 """
 
 import configparser
+import com.haw_landshut.s_mkaspe.thesis.main.Mappings as Mappings
 
 class ConfigReader:
     """
@@ -23,10 +24,8 @@ class ConfigReader:
         """
         returns all test cases in the config as a list of dicts
         """
-        test_case_options = ['input_type', 'return_type', 'distribution_file', 'distribution_details',
-                             'test', 'num_buckets', 'rho', 'hash_size', 'row_size', 'test_distribution',
-                             'num_tests', 'capacity']
-        test_case_list_options = ['hash_algorithm', 'argument_types']
+        test_case_options = ['distribution_details', 'test', 'num_buckets', 'rho', 'hash_size', 'row_size', 'num_tests', 'capacity',
+                             'num_oversized_returns']
         test_list = []
         test_number = 1
         while True:
@@ -35,12 +34,18 @@ class ConfigReader:
             except KeyError:
                 break
             test_case = {}
+            hash_algo_list = splitArgumentTypes(currentSection['hash_algorithm'])
+            test_case['hash_algorithm'] = []
+            for hash_algo in hash_algo_list:
+                test_case['hash_algorithm'].append(Mappings.hash_function_file_mapping[hash_algo])
+            '''all hash algorithms have to have the same input/return/argument types so taking the one from the first algorithm is sufficient'''
+            test_case['input_type'] = Mappings.input_type_to_hash_function[hash_algo_list[0]]
+            test_case['return_type'] = Mappings.return_type_to_hash_function[hash_algo_list[0]]
             for test_case_option in test_case_options:
                 if test_case_option in currentSection:
                     test_case[test_case_option] = currentSection[test_case_option]
-            for test_case_list_option in test_case_list_options:
-                test_case[test_case_list_option] = splitArgumentTypes(currentSection[test_case_list_option])
             if 'seeds' in currentSection:
+                test_case['argument_types'] = Mappings.argument_types_to_hash_function_seed[hash_algo_list[0]]
                 test_case['seeds'] = splitArgumentTypes(self.config['Test ' + str(test_number)]['seeds'])
                 '''make seeds have the same length as hash algorithms, even if the last algorithms have no seed'''
                 if len(test_case['hash_algorithm']) > len(test_case['seeds']):
@@ -49,6 +54,7 @@ class ConfigReader:
                 if 'table_seed' in currentSection:
                     test_case['table_seed']     = True
             else:
+                test_case['argument_types'] = Mappings.argument_types_to_hash_function[hash_algo_list[0]]
                 test_case['seeds']              = None
             test_list.append(test_case)
             test_number += 1

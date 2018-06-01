@@ -43,8 +43,16 @@ class Distribution:
                 for index in range(chunk_size):
                     strArray[index] = (str(random.randint(self.min_roll, self.max_roll))).encode('UTF8')
             elif self.random_type == "random_exponential":
+                if self.min_roll < 10 or self.min_roll > 1000000000:
+                    print("WARNING: lambda might be too small to create a real distribution/too big to create heavy hitters")
+                for index in range(chunk_size):
+                    strArray[index] = (str(random.expovariate(1/self.min_roll))).encode('UTF8')
+            elif self.random_type == "random_gauss":
                 mid_val = (self.min_roll + self.max_roll) / 2
-                strArray[index] = (str(random.expovariate(1/mid_val))).encode('UTF8')
+                """standard deviation set to fit 3 std deviations on each side of the mean for the given left and right rims"""
+                std_dev = (self.max_roll - self.min_roll) / 6
+                for index in range(chunk_size):
+                    strArray[index] = (str(random.gauss(mid_val, std_dev))).encode('UTF8')
             else:
                 for index in range(chunk_size):
                     strArray[index] = (str(self.current_index + index)).encode('UTF8')
@@ -62,6 +70,12 @@ class Distribution:
             mid_val = (self.min_roll + self.max_roll) / 2
             for _ in range(chunk_size):
                 chunk.append(int(random.expovariate(1/mid_val)))
+        elif self.random_type == "random_gauss":
+            mid_val = (self.min_roll + self.max_roll) / 2
+            """standard deviation set to fit 3 std deviations on each side of the mean for the given left and right rims"""
+            std_dev = (self.max_roll - self.min_roll) / 6
+            for _ in range(chunk_size):
+                chunk.append(int(random.gauss(mid_val, std_dev)))
         else:
             for index in range(chunk_size):
                 chunk.append(self.current_index + index)

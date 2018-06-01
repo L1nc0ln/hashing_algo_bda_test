@@ -24,6 +24,8 @@ class DistributionTest():
         self.previous_element    = 0
         self.current_streak      = 0
         self.streak_details      = {}
+        self.skip_flag           = False
+        self.streak_test_start   = True
         
         for _ in range(num_buckets):
             self.buckets.append(0)
@@ -34,30 +36,59 @@ class DistributionTest():
         checks how often a bigger elements follows the current element and builds a set of
         how often which kind of streak happens
         """
-        for element in elements:
-            if element > self.previous_element:
-                self.current_streak += 1
-            else:
-                if self.current_streak in self.streak_details:
-                    self.streak_details[self.current_streak] += 1
+        if self.streak_test_start:
+            self.streak_test_start = False
+            self.previous_element = elements[0]
+            for element in elements[1:]:
+                if self.skip_flag:
+                    self.skip_flag = False
                 else:
-                    self.streak_details[self.current_streak] = 1
-                self.current_streak = 0
-            self.previous_element = element
+                    if element > self.previous_element:
+                        self.current_streak += 1
+                    else:
+                        if self.current_streak in self.streak_details:
+                            self.streak_details[self.current_streak] += 1
+                        else:
+                            self.streak_details[self.current_streak] = 1
+                        self.current_streak = 0
+                        self.skip_flag = True
+                self.previous_element = element
+        else:
+            for element in elements:
+                if self.skip_flag:
+                    self.skip_flag = False
+                else:
+                    if element > self.previous_element:
+                        self.current_streak += 1
+                    else:
+                        if self.current_streak in self.streak_details:
+                            self.streak_details[self.current_streak] += 1
+                        else:
+                            self.streak_details[self.current_streak] = 1
+                        self.current_streak = 0
+                        self.skip_flag = True
+                self.previous_element = element
     
     def getStreakResults(self, test_results):
         """
         @param test_results: dict to store the results of the streak test in
         test results are: streaks from 0 - 9, number of streaks of all > 9 combined, maximum streak
         """
+        '''insert current streak into results, since this the last one is never inserted by the streak test since
+        there could be another chunk coming'''
+        if self.current_streak in self.streak_details:
+            self.streak_details[self.current_streak] += 1
+        else:
+            self.streak_details[self.current_streak] = 1
         for index in range(0, 9):
-            test_results['streak ' + str(index)] = self.streak_details[index] if index in self.streak_details else 0
+            test_results['streak_' + str(index)] = self.streak_details[index] if index in self.streak_details else 0
+            print(self.streak_details[index] if index in self.streak_details else 0)
         num_big_streaks = 0
         for key in self.streak_details.keys():
             if key > 9:
                 num_big_streaks += self.streak_details[key]
-        test_results['streak 10+'] = num_big_streaks
-        test_results['max streak'] = max(self.streak_details.keys())
+        test_results['streak_10+'] = num_big_streaks
+        test_results['max_streak'] = max(self.streak_details.keys())
     
     def checkForCollisions(self, hashed_array):
         """
