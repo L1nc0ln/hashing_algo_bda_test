@@ -1,5 +1,7 @@
 #include <stdint.h>
 #include <string.h>
+#include <assert.h>
+#include <stdio.h>
 
 #include "sha256.h"
 
@@ -219,5 +221,38 @@ uint32_t uintSha256Hash(uint32_t toHash){
         returnValue = returnValue | returnBytes[index];
     }
     return returnValue;
+}
+
+void sha256Hash(uint32_t toHash, uint32_t num_return_vars, uint32_t* result_array){
+    assert(num_return_vars < 8);
+    size_t len = sizeof(uint32_t);
+    uint8_t returnBytes[32];
+    calc_sha_256(returnBytes, &toHash, len);
+    for(int outerIndex = 0; outerIndex < num_return_vars; outerIndex++){
+        uint32_t intValue = 0;
+        for(int index = 0; index < 4; index++){
+            intValue <<= 8;
+            intValue = intValue | returnBytes[outerIndex * 4 + index];
+        }
+        result_array[outerIndex] = intValue;
+    }
+}
+
+void sha256HashNumbersFull(int array_length, uint32_t num_return_vars,
+                           uint32_t* array, uint32_t return_array[num_return_vars][array_length]){
+    uint32_t currentHash[num_return_vars];
+    for(int counter = 0; counter < array_length; counter++){
+        sha256Hash(array[counter], num_return_vars, currentHash);
+        // return_array is gonna be an array of size  num_return_vars x array_length
+        for(int innerCounter = 0; innerCounter < num_return_vars; innerCounter++){
+            return_array[innerCounter][counter] = currentHash[innerCounter];
+        }
+    }
+}
+
+void sha256HashNumbers(int array_length, uint32_t* array, uint32_t* return_array){
+    for(int counter = 0; counter < array_length; counter++){
+        return_array[counter] = uintSha256Hash(array[counter]);
+    }
 }
 
