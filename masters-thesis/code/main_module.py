@@ -11,9 +11,11 @@ import com.haw_landshut.s_mkaspe.thesis.main.CountMinSketchTest as CountMinSketc
 import com.haw_landshut.s_mkaspe.thesis.main.BloomFilterTest as BloomFilterTest
 import com.haw_landshut.s_mkaspe.thesis.main.DistributionTest as DistributionTest
 import com.haw_landshut.s_mkaspe.thesis.main.Logs as logs
+import numpy as np
 from _operator import itemgetter
 from com.haw_landshut.s_mkaspe.thesis.main import Mappings
 from com.haw_landshut.s_mkaspe.thesis.old.mainmodule import num_operations
+from math import sqrt
 
 
 def getHashFunctionWrapping(unresolved_arguments, library_name, with_seed):
@@ -42,7 +44,7 @@ def resolveArgumentTypes(unresolved_arguments):
         resolved_arguments.append(Mappings.type_mapping_c[argument])
     return resolved_arguments
 
-def hashNextChunk(hash_function, seed, next_chunk_size, argument_types, unhashed_array):
+def hashNextChunk(hash_function, seed, next_chunk_size, argument_types, unhashed_array, num_oversized_returns):
     """
     @param hash_function: the hash function to call for hashing the elements
     @param seed: seed for the hash function, a number or None if no seed
@@ -55,15 +57,18 @@ def hashNextChunk(hash_function, seed, next_chunk_size, argument_types, unhashed
     """
     '''argument_array has to be a list, even if the list with unhashed elements is the only thing in the list'''
     argument_array = [unhashed_array]
-    data_type_index = 1 if seed is None else 2
-    if argument_types[data_type_index] == 'char**':
+    if argument_types[-2] == 'char**':
         length_infos = [0]*next_chunk_size
         length_infos = (Mappings.pointer_type_mapping[argument_types[-2]] * next_chunk_size)(*length_infos)
         for index in range(len(argument_array[0])):
             length_infos[index] = len(argument_array[0][index])
         argument_array.append(length_infos)
-    return_array = [0]*next_chunk_size
-    return_array = (Mappings.pointer_type_mapping[argument_types[-1]] * next_chunk_size)(*return_array)
+    if num_oversized_returns is not None:
+        argument_array.insert(0, num_oversized_returns)
+        return_array = np.empty([num_oversized_returns, next_chunk_size], dtype=Mappings.pointer_type_mapping[argument_types[-1]])
+    else:
+        return_array = [0]*next_chunk_size
+        return_array = (Mappings.pointer_type_mapping[argument_types[-1]] * next_chunk_size)(*return_array)
     argument_array.append(return_array)
         
     
@@ -83,7 +88,7 @@ def hashNextChunk(hash_function, seed, next_chunk_size, argument_types, unhashed
     time_taken = 1000 * (end_time - start_time)
     return time_taken, argument_array[-1]
 
-def fillDataStructure(test_details, hash_function_list, put_function, time_taken_total, test_results):
+def fillDataStructure(test_details, hash_function_list, put_function, time_taken_total, distribution):
     """
     @param test_details: contains information about specifics of the test, like the hash functions to test
     @param hash_function_list: a list of functions that do the hashing
@@ -93,22 +98,18 @@ def fillDataStructure(test_details, hash_function_list, put_function, time_taken
     goes through the list of provided hash functions and gets the hashed values for each of the hash functions
     and then stores those values by calling the provided put_function
     """
-    distribution = Distribution.Distribution(test_results['random_type'], test_results['seed'], test_results['distribution_param_1'],
-                                             test_results['distribution_param_2'], False)
     operations_left = num_operations
     
     while operations_left > 0:
         next_chunk_size = chunk_size if operations_left > chunk_size else operations_left
-        data_type_index = 1 if test_details['seeds'] == None else 2
-        unhashed_array = distribution.generateChunk(next_chunk_size, Mappings.pointer_type_mapping[test_details['argument_types'][data_type_index]])
-        hashed_values, time_taken = getHashedArrays(hash_function_list, next_chunk_size, test_details['argument_types'],
-                                                    unhashed_array, test_details['seeds'])
+        unhashed_array = distribution.generateChunk(next_chunk_size, Mappings.pointer_type_mapping[test_details['argument_types'][-2]])
+        hashed_values, time_taken = getHashedArrays(hash_function_list, next_chunk_size, test_details, unhashed_array)
         put_function(unhashed_array, hashed_values)
         operations_left = operations_left - chunk_size
         time_taken_total = time_taken_total + time_taken
     return time_taken_total
 
-def getHashedArrays(hash_function_list, next_chunk_size, argument_types, unhashed_array, seeds):
+def getHashedArrays(hash_function_list, next_chunk_size, test_details, unhashed_array):
     """
     @param hash_function_list: a list of functions that do the hashing
     @param next_chunk_size: how many elements should be hashed in one function call
@@ -119,17 +120,23 @@ def getHashedArrays(hash_function_list, next_chunk_size, argument_types, unhashe
     goes through the list of provided hash functions and gets the hashed values for each of the hash functions.
     Also checks the amount of time the hash functions are running
     """
+    if 'num_oversized_returns' in test_details:
+        num_oversized_returns = int(test_details['num_oversized_returns'])
+    else:
+        num_oversized_returns = None
     hashed_values = []
-    if seeds is None:
+    if test_details['seeds'] is None:
         for hash_function in hash_function_list:
-            time_taken, hashed_array = hashNextChunk(hash_function, None, next_chunk_size, argument_types,
-                                                     unhashed_array)
+            time_taken, hashed_array = hashNextChunk(hash_function, None, next_chunk_size, test_details['argument_types'],
+                                                     unhashed_array, num_oversized_returns)
             hashed_values.append(hashed_array)
     else:
         for index, hash_function in enumerate(hash_function_list):
-            time_taken, hashed_array = hashNextChunk(hash_function, seeds[index], next_chunk_size,
-                                                     argument_types, unhashed_array)
+            time_taken, hashed_array = hashNextChunk(hash_function, test_details['seeds'][index], next_chunk_size,
+                                                     test_details['argument_types'], unhashed_array, num_oversized_returns)
             hashed_values.append(hashed_array)
+    if len(hashed_values) == 1 and isinstance(hashed_values[0], np.ndarray):
+        hashed_values = hashed_values[0]
     return hashed_values, time_taken
 
 def bloomFilterTest(test_details, test_results):
@@ -143,20 +150,22 @@ def bloomFilterTest(test_details, test_results):
     time_taken_total    = 0
     bloom_filter_test   = BloomFilterTest.BloomFilterTest(int(test_details['capacity']))
     hash_function_list  = []
+    distribution = Distribution.Distribution(test_results['random_type'], test_results['seed'], test_results['distribution_param_1'],
+                                             test_results['distribution_param_2'], False)
     
     for index, hash_function in enumerate(test_details['hash_algorithm']):
         with_seed = False if test_details['seeds'] == None or test_details['seeds'][index] == '' else True
         hash_function_list.append(getHashFunctionWrapping(test_details['argument_types'], hash_function, with_seed))
     
     time_taken_total = fillDataStructure(test_details, hash_function_list, bloom_filter_test.putHashedValues, time_taken_total,
-                                         test_results)
+                                         distribution)
     
-    test_results = getBloomFilterStats(bloom_filter_test, hash_function_list, test_details, test_results)
+    test_results = getBloomFilterStats(bloom_filter_test, hash_function_list, test_details, test_results, distribution)
     test_results['time_taken'] = time_taken_total
     
     return test_results
     
-def getBloomFilterStats(bloom_filter_test, hash_function_list, test_details, test_results):
+def getBloomFilterStats(bloom_filter_test, hash_function_list, test_details, test_results, distribution):
     """
     @param bloom_filter_test: the BloomFilterTest object containing the stored data for which to retrieve the stats
     @param hash_function_list: a list of functions that do the hashing
@@ -169,27 +178,27 @@ def getBloomFilterStats(bloom_filter_test, hash_function_list, test_details, tes
     positives
     """
     num_false_positives = 0
-    distribution = Distribution.Distribution(test_results['random_type'], test_results['seed'], test_results['distribution_param_1'],
-                                             test_results['distribution_param_2'], False)
+    num_true_positives = 0
     num_tests = test_details['num_tests']
     operations_left = int(num_tests)
     
     while operations_left > 0:
         next_chunk_size = chunk_size if operations_left > chunk_size else operations_left
-        data_type_index = 1 if test_details['seeds'] == None else 2
-        unhashed_array = distribution.generateChunk(next_chunk_size, Mappings.pointer_type_mapping[test_details['argument_types'][data_type_index]])
-        hashed_values, _ = getHashedArrays(hash_function_list, next_chunk_size, test_details['argument_types'],
-                                                    unhashed_array, test_details['seeds'])
+        unhashed_array = distribution.generateChunk(next_chunk_size, Mappings.pointer_type_mapping[test_details['argument_types'][-2]])
+        hashed_values, _ = getHashedArrays(hash_function_list, next_chunk_size, test_details, unhashed_array)
         for index, unhashed_val in enumerate(unhashed_array):
             fetch = itemgetter(index)
-            is_false_positive = bloom_filter_test.checkFalsePositive(unhashed_val, list(map(fetch, hashed_values)))
-            if is_false_positive:
+            status_flag = bloom_filter_test.checkFalsePositive(unhashed_val, list(map(fetch, hashed_values)))
+            if status_flag == 1:
+                num_true_positives += 1
+            elif status_flag == 2:
                 num_false_positives += 1
         operations_left = operations_left - chunk_size
     fill_factor = bloom_filter_test.fillFactor()
     
     test_results['num_bloom_tests'] = test_details['num_tests']
     test_results['false_pos']       = num_false_positives
+    test_results['true_pos']        = num_true_positives
     test_results['fill_factor']     = fill_factor
     test_results['bloom_capacity']  = test_details['capacity']
     
@@ -204,15 +213,20 @@ def countMinTest(test_details, test_results):
     specifics for the test are taken form the test_details. Hashing is done in chunks
     """
     time_taken_total = 0
-    count_min_test   = CountMinSketchTest.CountMinSketchTest(test_details['row_size'], len(test_details['hash_algorithm']))
-    
+    if 'num_oversized_returns' in test_details:
+        num_rows = int(test_details['num_oversized_returns'])
+    else:
+        num_rows = len(test_details['hash_algorithm'])
+    count_min_test   = CountMinSketchTest.CountMinSketchTest(test_details['row_size'], num_rows)
+    distribution = Distribution.Distribution(test_results['random_type'], test_results['seed'], test_results['distribution_param_1'],
+                                             test_results['distribution_param_2'], False)
     hash_function_list = []
     for index, hash_function in enumerate(test_details['hash_algorithm']):
         with_seed = False if test_details['seeds'] == None or test_details['seeds'][index] == '' else True
         hash_function_list.append(getHashFunctionWrapping(test_details['argument_types'], hash_function, with_seed))
     
     time_taken_total = fillDataStructure(test_details, hash_function_list, count_min_test.putMultHashed, time_taken_total,
-                                         test_results)
+                                         distribution)
     
     test_results = getCountMinStats(count_min_test, hash_function_list, test_details, test_results)
     test_results['time_taken'] = time_taken_total
@@ -241,19 +255,15 @@ def getCountMinStats(count_min_test, hash_function_list, test_details, test_resu
     
     next_chunk_size = operations_left
     contained_values_slice = contained_values
-    data_type_index = 1 if test_details['seeds'] == None else 2
-    print(contained_values_slice)
-    print(Mappings.pointer_type_mapping[test_details['argument_types'][data_type_index]])
-    contained_values_slice = (Mappings.pointer_type_mapping[test_details['argument_types'][data_type_index]] * next_chunk_size)(*contained_values_slice)
-    hashed_values, _ = getHashedArrays(hash_function_list, next_chunk_size, test_details['argument_types'],
-                                                contained_values_slice, test_details['seeds'])
+    contained_values_slice = (Mappings.pointer_type_mapping[test_details['argument_types'][-2]] * next_chunk_size)(*contained_values_slice)
+    hashed_values, _ = getHashedArrays(hash_function_list, next_chunk_size, test_details, contained_values_slice)
     est_vals = count_min_test.getEstimates(hashed_values)
     real_vals = count_min_test.getRealValues(contained_values_slice)
     
     for index in range(len(contained_values_slice)):
         average_est_count = average_est_count + est_vals[index]
         average_real_count = average_real_count + real_vals[index]
-        average_error = average_error + (real_vals[index] - est_vals[index]) * (real_vals[index] - est_vals[index])
+        average_error = average_error + sqrt((real_vals[index] - est_vals[index]) * (real_vals[index] - est_vals[index]))
         if abs(real_vals[index] - est_vals[index]) > max_error:
             max_error = abs(real_vals[index] - est_vals[index])
         
@@ -282,10 +292,8 @@ def hyperLogLogTest(test_details, test_results):
     
     while operations_left > 0:
         next_chunk_size = chunk_size if operations_left > chunk_size else operations_left
-        data_type_index = 1 if test_details['seeds'] == None else 2
-        unhashed_array = distribution.generateChunk(next_chunk_size, Mappings.pointer_type_mapping[test_details['argument_types'][data_type_index]])
-        hashed_array, time_taken = getHashedArrays([hash_function], next_chunk_size, test_details['argument_types'],
-                                                    unhashed_array, test_details['seeds'])
+        unhashed_array = distribution.generateChunk(next_chunk_size, Mappings.pointer_type_mapping[test_details['argument_types'][-2]])
+        hashed_array, time_taken = getHashedArrays([hash_function], next_chunk_size, test_details,  unhashed_array)
         hyperloglog_test.putHashedValues(distribution.getLastChunk(), hashed_array[0])
         operations_left = operations_left - chunk_size
         time_taken_total = time_taken_total + time_taken
@@ -322,10 +330,8 @@ def distributionTest(test_details, test_results):
     while operations_left > 0:
         next_chunk_size = chunk_size if operations_left > chunk_size else operations_left
         
-        data_type_index = 1 if test_details['seeds'] == None else 2
-        unhashed_array = distribution.generateChunk(next_chunk_size, Mappings.pointer_type_mapping[argument_types[data_type_index]])
-        hashed_array, time_taken = getHashedArrays([hash_function], next_chunk_size, test_details['argument_types'],
-                                                    unhashed_array, test_details['seeds'])
+        unhashed_array = distribution.generateChunk(next_chunk_size, Mappings.pointer_type_mapping[argument_types[-2]])
+        hashed_array, time_taken = getHashedArrays([hash_function], next_chunk_size, test_details, unhashed_array)
         time_taken_total = time_taken_total + time_taken
         
         distribution_test.checkForCollisions(hashed_array[0])
@@ -385,18 +391,18 @@ def processDistributionDetails(distribution_details, test_results):
         test_results['distribution_param_1']    = distribution_details_list[2]
         test_results['distribution_param_2']    = distribution_details_list[3]
         test_results['seed']                    = None
-    elif distribution_details_list[0] == 'random':
-        test_results['random_type']             = 'random_uniform'
+    else:
+        if distribution_details_list[0] == 'random':
+            test_results['random_type']         = 'random_uniform'
+        elif distribution_details_list[0] == 'exp':
+            test_results['random_type']         = 'random_exponential'
+        elif distribution_details_list[0] == 'gauss':
+            test_results['random_type']         = 'random_gauss'
         test_results['seed']                    = distribution_details_list[1]
         test_results['num_elements']            = distribution_details_list[2]
         test_results['distribution_param_1']    = distribution_details_list[3]
         test_results['distribution_param_2']    = distribution_details_list[4]
-    elif distribution_details_list[0] == 'exp':
-        test_results['random_type']             = 'random_exponential'
-        test_results['seed']                    = distribution_details_list[1]
-        test_results['num_elements']            = distribution_details_list[2]
-        test_results['distribution_param_1']    = distribution_details_list[3]
-        test_results['distribution_param_2']    = distribution_details_list[4]
+
 
 def runTestCase(test_details):
     """
@@ -429,8 +435,8 @@ def runTestCase(test_details):
                   test_results['avg_error'], 'max error:', test_results['max_error'],'time taken hashing:', test_results['time_taken'])
         elif test_details['test'] == 'bloomFilter':
             test_results = bloomFilterTest(test_details, test_results)
-            print('num_bloom_tests: ', test_results['num_bloom_tests'], 'false_pos: ', test_results['false_pos'], 'fill_factor: ',
-                  test_results['fill_factor'])
+            print('num_bloom_tests: ', test_results['num_bloom_tests'], 'false_pos: ', test_results['false_pos'],
+                  'true_pos: ', test_results['true_pos'], 'fill_factor: ', test_results['fill_factor'])
             
         if write_output:
                 logs.writeResultCSV('results/results.csv', True, test_results)
