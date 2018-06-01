@@ -1,7 +1,7 @@
 """
 @author: Michael Kaspera
 """
-
+import numpy as np
 
 class HyperLogLogCounter():
     '''
@@ -15,7 +15,7 @@ class HyperLogLogCounter():
         @param __hash_size__: the number of bits in the hash
         """
         self.__hash_size__ = hash_size
-        assert p >= 4 & p <= 16
+        assert p >= 4 and p <= 16
         self.register_shifts = hash_size - p
         '''mask to cover up the first p bits'''
         self.mask = pow(2, self.register_shifts) - 1
@@ -28,7 +28,8 @@ class HyperLogLogCounter():
         @param value: the (hashed) value to insert into the data structure
         """
         register_num = value >> self.register_shifts
-        leftover_val = value & self.mask
+        leftover_val = int(value & self.mask)
+        '''to +1 here or not to +1'''
         rho = self.register_shifts - leftover_val.bit_length()
         if self.registers[register_num] < rho:
             self.registers[register_num] = rho
@@ -38,6 +39,12 @@ class HyperLogLogCounter():
         @param values: a list of hash values to put into the data structure
         inputs the values into the data structure
         """
+        if isinstance(values[0], np.int64):
+            print("isintance")
+            tmp = []
+            for value in values:
+                tmp.append(np.asscalar(value))
+            values = tmp
         for value in values:
             self.putHashedValue(value)
         
@@ -48,10 +55,17 @@ class HyperLogLogCounter():
         harm_mean = 0
         for rho in self.registers:
             harm_mean += pow(2, -self.registers[rho])
-        harm_mean = (1.0 / harm_mean) * self.number_registers
+        harm_mean = 1.0 / harm_mean
         correction_const = self.__correction_constants__[self.number_registers] if self.number_registers \
                             in self.__correction_constants__ else __getCorrectionFunc__(self.number_registers)
-        return correction_const * self.number_registers * harm_mean
+        estimate = correction_const * self.number_registers * self.number_registers * harm_mean
+        '''correcting for too large/small values'''
+        if estimate < 2.5 * self.number_registers:
+            num_empty_bins = self.registers.count(0)
+            estimate = self.number_registers * np.log(self.number_registers/num_empty_bins)
+        elif estimate > 1/30 * pow(2, self.__hash_size__):
+            estimate = -pow(2, self.__hash_size__) * np.log(1 - estimate/pow(2, self.__hash_size__))
+        return estimate
 
         
 def __getCorrectionFunc__(number):

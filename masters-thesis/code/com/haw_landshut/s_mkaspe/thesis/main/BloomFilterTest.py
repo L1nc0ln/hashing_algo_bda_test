@@ -33,7 +33,12 @@ class BloomFilterTest():
         @param hashed_values: list of hashed values for which to check if the cells are set
         @return: did the unhashed value occur in the data stream AND does the bloom filter say it was set
         """
-        return ((unhashed_value in self.entries) and (self.bloom_filter.checkFalsePositive(hashed_values)))        
+        if not unhashed_value in self.entries:
+            return 0
+        elif (unhashed_value in self.entries) and (self.bloom_filter.checkFalsePositive(hashed_values)):
+            return 1
+        else:
+            return 2
         
     def fillFactor(self):
         """

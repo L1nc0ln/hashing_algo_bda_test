@@ -60,6 +60,10 @@ class CountMinSketchTest():
         occurances = []
         for item in unhashed_values:
             occurances.append(self.dict[item])
+        print("top 10 values: ")
+        print(str(occurances[:10]))
+        print("values 9990-1000: ")
+        print(str(occurances[-10:]))
         return occurances
     
     def getContainedKeys(self):

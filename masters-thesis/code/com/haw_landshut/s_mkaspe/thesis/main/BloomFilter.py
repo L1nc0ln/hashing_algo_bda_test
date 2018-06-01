@@ -32,6 +32,7 @@ class BloomFilter:
         for hashed_value in hashed_values:
             if self.b_filter[hashed_value%self.capacity] == 0:
                 return False
+                print('meh')
         return True
     
     def getHashedValues(self, values):
