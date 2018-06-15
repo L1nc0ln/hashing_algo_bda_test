@@ -57,7 +57,9 @@ def hashNextChunk(hash_function, seed, next_chunk_size, argument_types, unhashed
     """
     '''argument_array has to be a list, even if the list with unhashed elements is the only thing in the list'''
     argument_array = [unhashed_array]
-    if argument_types[-2] == 'char**':
+    '''if chars are passed to the hash function, the passed values are the third last 
+       value (passed value, length of each value, return array)'''
+    if argument_types[-3] == 'char**':
         length_infos = [0]*next_chunk_size
         length_infos = (Mappings.pointer_type_mapping[argument_types[-2]] * next_chunk_size)(*length_infos)
         for index in range(len(argument_array[0])):
@@ -102,7 +104,11 @@ def fillDataStructure(test_details, hash_function_list, put_function, time_taken
     
     while operations_left > 0:
         next_chunk_size = chunk_size if operations_left > chunk_size else operations_left
-        unhashed_array = distribution.generateChunk(next_chunk_size, Mappings.pointer_type_mapping[test_details['argument_types'][-2]])
+        if test_details['argument_types'][-3] == 'char**':
+            data_type = Mappings.pointer_type_mapping[test_details['argument_types'][-3]]
+        else:
+            data_type = Mappings.pointer_type_mapping[test_details['argument_types'][-2]]
+        unhashed_array = distribution.generateChunk(next_chunk_size, data_type)
         hashed_values, time_taken = getHashedArrays(hash_function_list, next_chunk_size, test_details, unhashed_array)
         put_function(unhashed_array, hashed_values)
         operations_left = operations_left - chunk_size
@@ -184,11 +190,15 @@ def getBloomFilterStats(bloom_filter_test, hash_function_list, test_details, tes
     
     while operations_left > 0:
         next_chunk_size = chunk_size if operations_left > chunk_size else operations_left
-        unhashed_array = distribution.generateChunk(next_chunk_size, Mappings.pointer_type_mapping[test_details['argument_types'][-2]])
+        if test_details['argument_types'][-3] == 'char**':
+            data_type = Mappings.pointer_type_mapping[test_details['argument_types'][-3]]
+        else:
+            data_type = Mappings.pointer_type_mapping[test_details['argument_types'][-2]]
+        unhashed_array = distribution.generateChunk(next_chunk_size, data_type)
         hashed_values, _ = getHashedArrays(hash_function_list, next_chunk_size, test_details, unhashed_array)
         for index, unhashed_val in enumerate(unhashed_array):
             fetch = itemgetter(index)
-            status_flag = bloom_filter_test.checkFalsePositive(unhashed_val, list(map(fetch, hashed_values)))
+            status_flag = bloom_filter_test.containsValue(unhashed_val, list(map(fetch, hashed_values)))
             if status_flag == 1:
                 num_true_positives += 1
             elif status_flag == 2:
@@ -197,6 +207,7 @@ def getBloomFilterStats(bloom_filter_test, hash_function_list, test_details, tes
     fill_factor = bloom_filter_test.fillFactor()
     
     test_results['num_bloom_tests'] = test_details['num_tests']
+    test_results['num_stored']      = bloom_filter_test.countElements()
     test_results['false_pos']       = num_false_positives
     test_results['true_pos']        = num_true_positives
     test_results['fill_factor']     = fill_factor
@@ -255,7 +266,11 @@ def getCountMinStats(count_min_test, hash_function_list, test_details, test_resu
     
     next_chunk_size = operations_left
     contained_values_slice = contained_values
-    contained_values_slice = (Mappings.pointer_type_mapping[test_details['argument_types'][-2]] * next_chunk_size)(*contained_values_slice)
+    if test_details['argument_types'][-3] == 'char**':
+        data_type = Mappings.pointer_type_mapping[test_details['argument_types'][-3]]
+    else:
+        data_type = Mappings.pointer_type_mapping[test_details['argument_types'][-2]]
+    contained_values_slice = (data_type * next_chunk_size)(*contained_values_slice)
     hashed_values, _ = getHashedArrays(hash_function_list, next_chunk_size, test_details, contained_values_slice)
     est_vals = count_min_test.getEstimates(hashed_values)
     real_vals = count_min_test.getRealValues(contained_values_slice)
@@ -267,6 +282,7 @@ def getCountMinStats(count_min_test, hash_function_list, test_details, test_resu
         if abs(real_vals[index] - est_vals[index]) > max_error:
             max_error = abs(real_vals[index] - est_vals[index])
         
+    test_results['row_size']        = test_details['row_size']
     test_results['avg_real_count']  = average_real_count/total_values
     test_results['avg_est_count']   = average_est_count/total_values
     test_results['avg_error']       = average_error/total_values
@@ -292,7 +308,11 @@ def hyperLogLogTest(test_details, test_results):
     
     while operations_left > 0:
         next_chunk_size = chunk_size if operations_left > chunk_size else operations_left
-        unhashed_array = distribution.generateChunk(next_chunk_size, Mappings.pointer_type_mapping[test_details['argument_types'][-2]])
+        if test_details['argument_types'][-3] == 'char**':
+            data_type = Mappings.pointer_type_mapping[test_details['argument_types'][-3]]
+        else:
+            data_type = Mappings.pointer_type_mapping[test_details['argument_types'][-2]]
+        unhashed_array = distribution.generateChunk(next_chunk_size, data_type)
         hashed_array, time_taken = getHashedArrays([hash_function], next_chunk_size, test_details,  unhashed_array)
         hyperloglog_test.putHashedValues(distribution.getLastChunk(), hashed_array[0])
         operations_left = operations_left - chunk_size
@@ -300,6 +320,7 @@ def hyperLogLogTest(test_details, test_results):
     est_distinct_elems = hyperloglog_test.getEstDistElems()
     distinct_elems = hyperloglog_test.getDistElems()
     
+    test_results['rho']             = test_details['rho']
     test_results['est_dist_elems']  = est_distinct_elems
     test_results['dist_elems']      = distinct_elems
     test_results['time_taken']      = time_taken_total
@@ -330,7 +351,11 @@ def distributionTest(test_details, test_results):
     while operations_left > 0:
         next_chunk_size = chunk_size if operations_left > chunk_size else operations_left
         
-        unhashed_array = distribution.generateChunk(next_chunk_size, Mappings.pointer_type_mapping[argument_types[-2]])
+        if argument_types[-3] == 'char**':
+            data_type = Mappings.pointer_type_mapping[argument_types[-3]]
+        else:
+            data_type = Mappings.pointer_type_mapping[argument_types[-2]]
+        unhashed_array = distribution.generateChunk(next_chunk_size, data_type)
         hashed_array, time_taken = getHashedArrays([hash_function], next_chunk_size, test_details, unhashed_array)
         time_taken_total = time_taken_total + time_taken
         
@@ -435,8 +460,9 @@ def runTestCase(test_details):
                   test_results['avg_error'], 'max error:', test_results['max_error'],'time taken hashing:', test_results['time_taken'])
         elif test_details['test'] == 'bloomFilter':
             test_results = bloomFilterTest(test_details, test_results)
-            print('num_bloom_tests: ', test_results['num_bloom_tests'], 'false_pos: ', test_results['false_pos'],
-                  'true_pos: ', test_results['true_pos'], 'fill_factor: ', test_results['fill_factor'])
+            print('num_bloom_tests: ', test_results['num_bloom_tests'], 'stored in filter:', test_results['num_stored'],
+                  'false_pos: ', test_results['false_pos'], 'true_pos: ', test_results['true_pos'],
+                  'fill_factor: ', test_results['fill_factor'])
             
         if write_output:
                 logs.writeResultCSV('results/results.csv', True, test_results)
@@ -453,7 +479,8 @@ if __name__ == '__main__':
     chunk_size      = int(options_list['chunk_size'])
     
     program_start_time = time.process_time()
-    for test_case in test_cases:
+    for test_number, test_case in enumerate(test_cases):
+        print('test', test_number, ':', end='')
         runTestCase(test_case)
     program_end_time = time.process_time()
     program_time_taken = (program_end_time - program_start_time) * 1000
