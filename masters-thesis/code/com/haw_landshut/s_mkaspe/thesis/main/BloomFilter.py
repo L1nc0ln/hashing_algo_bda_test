@@ -24,7 +24,7 @@ class BloomFilter:
             for value in value_list:
                 self.b_filter[value%self.capacity] = 1
     
-    def checkFalsePositive(self, hashed_values):
+    def containsValue(self, hashed_values):
         """
         @param hashed_values: list of hashed values for which to check if the cells are set
         @return: are all hit cells set to 1?
@@ -44,7 +44,7 @@ class BloomFilter:
         """
         __result_list__ = []
         for value_list in values:
-            is_in = self.checkFalsePositive(value_list)
+            is_in = self.containsValue(value_list)
             __result_list__.append(is_in)
         return __result_list__
     

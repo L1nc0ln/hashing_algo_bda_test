@@ -27,18 +27,17 @@ class BloomFilterTest():
             self.entries[unhashed_entry] = 1
         self.bloom_filter.putHashedValues(hashed_values)
     
-    def checkFalsePositive(self, unhashed_value, hashed_values):
+    def containsValue(self, unhashed_value, hashed_values):
         """
         @param unhashed_value: the unhashed value belonging to the list of hashes
         @param hashed_values: list of hashed values for which to check if the cells are set
-        @return: did the unhashed value occur in the data stream AND does the bloom filter say it was set
+        @return: 1 for true pos, 2 for false positive, 0 for everything else
         """
-        if not unhashed_value in self.entries:
-            return 0
-        elif (unhashed_value in self.entries) and (self.bloom_filter.checkFalsePositive(hashed_values)):
-            return 1
+        if unhashed_value in self.entries:
+            return 1 if self.bloom_filter.containsValue(hashed_values) else 0
         else:
-            return 2
+            return 2 if self.bloom_filter.containsValue(hashed_values) else 0
+
         
     def fillFactor(self):
         """
@@ -51,4 +50,10 @@ class BloomFilterTest():
         @return: estimated amount of contained entries in the Bloom Filter
         """
         return self.bloom_filter.guessNumElements()
+    
+    def countElements(self):
+        """
+        @return: real number of elements stored in the bloom filter
+        """
+        return len(self.entries)
     
