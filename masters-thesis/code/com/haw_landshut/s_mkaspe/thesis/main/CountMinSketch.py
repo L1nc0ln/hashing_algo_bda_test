@@ -34,7 +34,6 @@ class CountMinSketch():
 #                 self.table[function_index][hashed_values[0][function_index][item_index]%self.row_size] += 1
         for index in range(len(hashed_values[0])):
             self.putHashed(element[index] for element in hashed_values)
-        print("passed once")
     
     def getEstimate(self, hashed_values):
         """
