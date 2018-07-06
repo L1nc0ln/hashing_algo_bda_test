@@ -6,6 +6,9 @@ probabilistic data structures such as Count-Min Sketch, Bloom Filter and
 HyperLogLog as well as determine the general distribution characteristica 
 of the utilized hash algorithms by doing chi-square and avalanche tests.
 
+Results of the tests, along with a few diagrams,  can be found on the following
+google spreadsheet: https://goo.gl/JefqGX
+
 Currently available hash algorithms for testing:
  - xxHash
  - Sha-256
