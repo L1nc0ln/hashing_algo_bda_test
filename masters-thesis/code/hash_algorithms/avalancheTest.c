@@ -248,7 +248,6 @@ void avalancheTestString(uint32_t (*f_ptr)(unsigned char*, int)){
     unsigned char original_string[NUMBER_STRING_SIZE];
     unsigned char changed_string[NUMBER_STRING_SIZE];
     for(counter = 0; counter < numberOfLoops; counter++){
-        sprintf(original_string, "%d", counter);
         uint32_t original_val = (*f_ptr)(original_string, NUMBER_STRING_SIZE);
         //go through all characters in the string
         for(int char_index = 0; char_index < NUMBER_STRING_SIZE; char_index++){
@@ -274,7 +273,6 @@ void avalancheTestStringWSeed(unsigned int (*f_ptr)(unsigned char*, int, uint32_
     unsigned char original_string[NUMBER_STRING_SIZE];
     unsigned char changed_string[NUMBER_STRING_SIZE];
     for(counter = 0; counter < numberOfLoops; counter++){
-        sprintf(original_string, "%d", counter);
         uint32_t original_val = (*f_ptr)(original_string, NUMBER_STRING_SIZE, seed);
         //go through all characters in the string
         for(int char_index = 0; char_index < NUMBER_STRING_SIZE; char_index++){
