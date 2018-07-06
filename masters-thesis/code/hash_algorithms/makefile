@@ -35,6 +35,7 @@ hash_shared_libs : $(SHARED_LIB_SOURCES)
 	gcc -shared -o djb2.so -fPIC djb2.c
 	gcc -shared -o knuth_hash.so -fPIC knuth_hash.c
 	gcc -shared -o mixedTableHashing.so -fPIC mixedTableHashing.c
+	gcc -shared -o xxhash.so -fPIC xxhash.c xxHash/xxhash.c
 
 xxhash.so : xxhash.c xxHash/xxhash.c
 	gcc -shared -o xxhash.so -fPIC xxhash.c xxHash/xxhash.c
