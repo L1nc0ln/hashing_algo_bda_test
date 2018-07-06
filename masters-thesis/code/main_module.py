@@ -393,10 +393,10 @@ def avalancheTest(test_details):
     '''return values couldnt be read outside of the scope of the method calling it, so the return values are sent back
     via an empty array that gets filled with the results. That array is always the last passed parameter'''
     hash_function.restype = None
-    hash_function.argtypes = [ctypes.c_char_p, ctypes.c_uint32] if with_seed else [ctypes.c_char_p]
+    hash_function.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.c_uint32] if with_seed else [ctypes.c_char_p, ctypes.c_uint32]
     hash_algo_name = ctypes.c_char_p(test_details['hash_algorithm'][0][test_details['hash_algorithm'][0].rfind('/') + 1:].encode('utf-8'))
     if with_seed:
-        hash_function(hash_algo_name, int(num_operations), int(test_details['seeds'][0]))
+        hash_function(hash_algo_name, int(test_details['seeds'][0]), int(num_operations))
     else:
         hash_function(hash_algo_name, int(num_operations))
     
