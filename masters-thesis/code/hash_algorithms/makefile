@@ -2,11 +2,12 @@ CC = gcc
 
 SOURCES = avalancheTest.c seven_shift.c jenkins_full_avalanche.c xxhash.c \
 	  tableHashing.c twistedTableHashing.c djb2.c thomas_wang_hash.c \
-	  xxHash/xxhash.c knuth_hash.c mixedTableHashing.c
+	  xxHash/xxhash.c knuth_hash.c mixedTableHashing.c sha256.c
 
 MAIN_SOURCES = avalancheTest.o seven_shift.o jenkins_full_avalanche.o xxhash.o \
 	       tableHashing.o twistedTableHashing.o djb2.o thomas_wang_hash.o \
-	       xxHash/xxhash.o knuth_hash.o avalancheTestMain.o mixedTableHashing.o
+	       xxHash/xxhash.o knuth_hash.o avalancheTestMain.o mixedTableHashing.o \
+	       sha256.o
 
 SHARED_LIB_SOURCES = seven_shift.c jenkins_full_avalanche.c tableHashing.c \
 		     thomas_wang_hash.c twistedTableHashing.c djb2.c knuth_hash.c \
@@ -14,7 +15,7 @@ SHARED_LIB_SOURCES = seven_shift.c jenkins_full_avalanche.c tableHashing.c \
 
 SHARED_LIBS = seven_shift.so jenkins_full_avalanche.so tableHashing.so \
 	      thomas_wang_hash.so twistedTableHashing.so djb2.so knuth_hash.so \
-	      mixedTableHashing.so
+	      mixedTableHashing.so sha256.so
 
 EXECUTABLE = avalancheTestMain
 
@@ -36,6 +37,7 @@ hash_shared_libs : $(SHARED_LIB_SOURCES)
 	gcc -shared -o knuth_hash.so -fPIC knuth_hash.c
 	gcc -shared -o mixedTableHashing.so -fPIC mixedTableHashing.c
 	gcc -shared -o xxhash.so -fPIC xxhash.c xxHash/xxhash.c
+	gcc -shared -o sha256.so -fPIC sha256.c
 
 xxhash.so : xxhash.c xxHash/xxhash.c
 	gcc -shared -o xxhash.so -fPIC xxhash.c xxHash/xxhash.c
