@@ -80,7 +80,7 @@ class DistributionTest():
             self.streak_details[self.current_streak] += 1
         else:
             self.streak_details[self.current_streak] = 1
-        for index in range(0, 9):
+        for index in range(0, 10):
             test_results['streak_' + str(index)] = self.streak_details[index] if index in self.streak_details else 0
             print(self.streak_details[index] if index in self.streak_details else 0)
         num_big_streaks = 0
