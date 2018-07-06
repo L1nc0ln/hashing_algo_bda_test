@@ -131,19 +131,22 @@ def getHashedArrays(hash_function_list, next_chunk_size, test_details, unhashed_
     else:
         num_oversized_returns = None
     hashed_values = []
+    time_taken_counter = 0
     if test_details['seeds'] is None:
         for hash_function in hash_function_list:
             time_taken, hashed_array = hashNextChunk(hash_function, None, next_chunk_size, test_details['argument_types'],
                                                      unhashed_array, num_oversized_returns)
+            time_taken_counter += time_taken
             hashed_values.append(hashed_array)
     else:
         for index, hash_function in enumerate(hash_function_list):
             time_taken, hashed_array = hashNextChunk(hash_function, test_details['seeds'][index], next_chunk_size,
                                                      test_details['argument_types'], unhashed_array, num_oversized_returns)
+            time_taken_counter += time_taken
             hashed_values.append(hashed_array)
     if len(hashed_values) == 1 and isinstance(hashed_values[0], np.ndarray):
         hashed_values = hashed_values[0]
-    return hashed_values, time_taken
+    return hashed_values, time_taken_counter
 
 def bloomFilterTest(test_details, test_results):
     """
@@ -369,6 +372,7 @@ def distributionTest(test_details, test_results):
     chi_square                      = distribution_test.getChiSquareStats()
     test_results['num_collisions']  = distribution_test.getNumCollisions()
     test_results['time_taken']      = time_taken_total
+    test_results['num_buckets']     = test_details['num_buckets']
     test_results['chi_square']      = chi_square[0]
     test_results['left_rim']        = chi_square[1][0]
     test_results['left_value']      = chi_square[1][1]
@@ -449,17 +453,21 @@ def runTestCase(test_details):
         processDistributionDetails(test_details['distribution_details'], test_results)
         if test_details['test']   == 'distribution':
             test_results = distributionTest(test_details, test_results)
+            print(time.strftime('%H:%M:%S: '), end='')
             for key in test_results.keys():
                 print('key: ' , key, ', value:', test_results[key])
         elif test_details['test'] == 'hyperloglog':
             test_results = hyperLogLogTest(test_details, test_results)
+            print(time.strftime('%H:%M:%S: '), end='')
             print('est: ', test_results['est_dist_elems'], 'real: ', test_results['dist_elems'])
         elif test_details['test'] == 'countMin':
             test_results = countMinTest(test_details, test_results)
+            print(time.strftime('%H:%M:%S: '), end='')
             print('avg_real: ', test_results['avg_real_count'], ' avg est:', test_results['avg_est_count'], 'avg error:',
                   test_results['avg_error'], 'max error:', test_results['max_error'],'time taken hashing:', test_results['time_taken'])
         elif test_details['test'] == 'bloomFilter':
             test_results = bloomFilterTest(test_details, test_results)
+            print(time.strftime('%H:%M:%S: '), end='')
             print('num_bloom_tests: ', test_results['num_bloom_tests'], 'stored in filter:', test_results['num_stored'],
                   'false_pos: ', test_results['false_pos'], 'true_pos: ', test_results['true_pos'],
                   'fill_factor: ', test_results['fill_factor'])
@@ -480,7 +488,7 @@ if __name__ == '__main__':
     
     program_start_time = time.process_time()
     for test_number, test_case in enumerate(test_cases):
-        print('test', test_number, ':', end='')
+        print('test', str(test_number + 1), ': ', end='')
         runTestCase(test_case)
     program_end_time = time.process_time()
     program_time_taken = (program_end_time - program_start_time) * 1000
