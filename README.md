@@ -8,6 +8,8 @@ of the utilized hash algorithms by doing chi-square and avalanche tests.
 
 Results of the tests, along with a few diagrams,  can be found on the following
 google spreadsheet: https://goo.gl/JefqGX
+A preliminary draft of the thesis can be found via the following link:
+https://mega.nz/#!VYlnxI6K!RVVywi-oijQlywYEIFbIMSShZrQPiSfZLOETiYQPjRs
 
 Currently available hash algorithms for testing:
  - xxHash
