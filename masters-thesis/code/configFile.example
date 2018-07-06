@@ -1,0 +1,246 @@
+[Options]
+# decides if the results are written to file, should be true most of the time
+write_output:                   true
+# name of the file to which the results are written
+output_file:                    "results.txt"
+# append output to output_file if it exists or overwrite it
+append:                         true
+# total number of keys inserted into the data structures
+num_operations:                 67108864
+# how many keys are sent to the C files at once
+chunk_size:                     16777216
+
+
+# sizes:
+# pow 10: 1024
+# pow 12: 4096
+# pow 14: 16348
+# pow 16: 65536
+# pow 18: 262144
+# pow 20: 1048576
+# pow 22: 4194304
+# pow 24: 16777216
+# pow 26: 67108864
+# pow 28: 268435456
+# pow 30: 1073741824
+
+##########################################################################################################################
+
+################################################################################################################
+##                                                                                                            ##
+##                                                   Tests                                                    ##
+##                                             ----------------                                               ##
+##           the actual tests go here, the tests must be numbered in ascending order with no missing          ##
+##                      missing numbers. If a number is missing the tests stop at that number                 ##
+##                                 Uncomment the example tests to make them active                            ##
+##                                                                                                            ##
+################################################################################################################
+
+# example of a Count-Min Sketch test with Knuth's hash as hash algorithm, k = 3 and m = 262144 with exponential distribution
+
+#[Test 1]
+#hash_algorithm:			knuth_hash.so, knuth_hash.so, knuth_hash.so
+#seeds:					415462498, 542752875, 708206240
+#distribution_details:	exp_157354821_67108864_50000_0
+#row_size:				262144
+#test:					countMin
+
+
+# example of a Count-Min Sketch test with Knuth's hash as hash algorithm, k = 5 and m = 1048576 with gaussian distribution
+
+#[Test 2]
+#hash_algorithm:			knuth_hash.so, knuth_hash.so, knuth_hash.so, knuth_hash.so, knuth_hash.so
+#seeds:					415462498, 542752875, 708206240, 241210282, 517011937
+#distribution_details:	gauss_623048099_67108864_0_67108864
+#row_size:				1048576
+#test:					countMin
+
+
+# example of a Bloom Filter test with xxHash as hash algorithm, k = 3 and m = 536870912 with random uniform distribution
+# there will be 67108864 tests for false positives, keys for that will be drawn from the same distribution as the input keys
+
+#[Test 3]
+#hash_algorithm:			xxhash.so, xxhash.so, xxhash.so
+#seeds:					443219832, 871776911, 701473021
+#distribution_details:	random_566881438_67108864_0_2147483648
+#capacity:               536870912
+#num_tests:              67108864
+#test:					bloomFilter
+
+
+# example of a Bloom Filter test with sha-256 as hash algorithm, k = 5 and m = 268435456 with random uniform distribution
+# there will be 67108864 tests for false positives, keys for that will be drawn from the same distribution as the input keys
+
+#[Test 4]
+#hash_algorithm:			sha256.so
+#num_oversized_returns:	5
+#distribution_details:	random_566881438_67108864_0_2147483648
+#capacity:               268435456
+#num_tests:              67108864
+#test:					bloomFilter
+
+
+# example of a distribution test for mixed tabulation, the buckets used for the chi-square test are 1024. distribution is
+# ascending numbers
+
+#[Test 5]
+#hash_algorithm:            mixedTableHashing.so
+#seeds:                     409777540
+#distribution_details:  	ordered_67108864_0_67108864
+#num_buckets:               1024
+#test:                      distribution
+
+
+# example of a distribution test for twisted tabulation, the buckets used for the chi-square test are 1024. distribution is
+# ascending numbers
+
+#[Test 6]
+#hash_algorithm:            twistedTableHashing.so
+#seeds:                     627711410
+#table_seed:                true
+#distribution_details:  	ordered_67108864_0_67108864
+#num_buckets:               1024
+#test:                      distribution
+
+
+# example of a hyperloglog test for Jenkins Full Avalanche, rho = 8 (m = 256), hash keys are of lenght 32
+
+#[Test 7]
+#hash_algorithm:            jenkins_full_avalanche.so
+#distribution_details:   	random_910336961_67108864_0_67108864
+#rho:                       8
+#hash_size:                 32
+#test:                      hyperloglog
+
+
+# example of a hyperloglog test for simple tabulation, rho = 16, hash keys are of lenght 32
+
+#[Test 8]
+#hash_algorithm:            tableHashing.so
+#seeds:                     918749337
+#table_seed:                true
+#distribution_details:   	random_910336961_67108864_0_67108864
+#rho:                       16
+#hash_size:                 32
+#test:                      hyperloglog
+
+
+
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+################################################################################################################
+##                                                                                                            ##
+##                                               Hash Headers                                                 ##
+##                                             ----------------                                               ##
+##           the part of a test description containing the information about the hash algorithm to use        ##
+##                      combine with one of the test signatures below to create a valid test                  ##
+##      Note: the tabulation hashes have to have a seed, the other hash algorithms here with seeds do not     ##
+##       algorithms that do not have a seed here cannot have one. MixedTableHashing does not need the         ##
+##                                        "table_seed:   true" part                                           ##
+##                                                                                                            ##
+################################################################################################################
+
+
+#hash_algorithm:                    tableHashing.so
+#seeds:                             219838461
+#table_seed:                        true
+
+#hash_algorithm:                    twistedTableHashing.so
+#seeds:                             606803979
+#table_seed:                        true
+
+#hash_algorithm:                    mixedTableHashing.so
+#seeds:                             609095395
+
+#hash_algorithm:                    seven_shift.so
+
+#hash_algorithm:                    jenkins_full_avalanche.so
+
+#hash_algorithm:                    sha256.so
+#num_oversized_returns: 			1
+
+#hash_algorithm:                    xxhash.so, xxhash.so, xxhash.so
+#seeds:                             177381583, 896418425, 848552911
+
+#hash_algorithm:                    knuth_hash.so
+#seeds:                             177381583
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+################################################################################################################
+##                                                                                                            ##
+##                                             Test Signatures                                                ##
+##                                          ---------------------                                             ##
+##      how the parts describing the test should look like. combine one of these with a hash header           ##
+##                                       to create a valid test												  ##
+##                                                                                                            ##
+################################################################################################################
+
+#distribution_details:  			random_623048099_67108864_0_67108864
+#capacity:                          536870912
+#num_tests:                         67108864
+#test:                              bloomFilter
+
+#distribution_details:  			exp_372357_67108864_0_1048576
+#row_size:                          1048576
+#test:                              countMin
+
+#distribution_details:  			exp_289842108_67108864_0_2147483648
+#rho:                               8
+#hash_size:                         32
+#test:                              hyperloglog
+
+#num_buckets:                   	16384
+#distribution_details:  			ordered_67108864_0_67108864
+#test:                              distribution
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+################################################################################################################
+##                                                                                                            ## 
+##                                              Distribution Types                                            ##
+##                                            ----------------------                                          ##
+##               the different kinds of distributions and what the numbers in their strings mean              ##
+##                                                                                                            ## 
+################################################################################################################
+
+## ordered, ascending numbers
+## number of elements:          		67108864
+## smallest element:                	0
+## biggest element:                 	67108864
+#ordered_67108864_0_67108864
+
+## randomised numbers
+## seed for random number gen:  		623048099
+## number of elements:          		67108864
+## smallest element:                    0
+## biggest element:                     67108864
+#random_623048099_67108864_0_67108864
+
+## exponential distribution, random numbers
+## seed for random number gen:  		623048099
+## number of elements:          		67108864
+## the second variable is not used here, the first parameter is lambda,
+## where the mean of the distribution is 1/lambda
+## make sure lambda isn't too big, else the distribution fazes out too much
+#exp_372357_67108864_1000_0
+
+## gaussian distribution, random numbers
+## seed for random number gen:  		623048099
+## number of elements:          		67108864
+## mean is the middle between largest and smallest element
+## std deviation is (largest - smallest)/6 so that 3 standard deviations lie on each side of the mean
+#gauss_623048099_67108864_0_67108864
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
