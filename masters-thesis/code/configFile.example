@@ -125,6 +125,33 @@ chunk_size:                     16777216
 #test:                      hyperloglog
 
 
+# example of an avalanche test for Knuth's hash
+
+#[Test 9]
+#hash_algorithm:			knuth_hash.so
+#seeds:					708206240
+#test:					avalanche
+
+
+# another example of an avalanche test, this time for twisted tabulation. Note that there is no need for
+# the "table_seed: true" parameter because the table is created in C during the avalanche test
+
+#[Test 2]
+#hash_algorithm:			twistedTableHashing.so
+#seeds:					708206240
+#test:					avalanche
+
+
+# yet another example of an avalanche test, this time for Sha-256. Not the need for "num_oversized_returns".
+# this need might change in the future, is vital for now though because else the parameter types for the algorithm
+# cannot be found
+
+#[Test 3]
+#hash_algorithm:			sha256.so
+#num_oversized_returns:  1
+#test:					avalanche
+
+
 
 
 
